@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/myungbeans/blueprince-mcp/runtime/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,7 +19,6 @@ type ServerConfig struct {
 type Config struct {
 	Server            ServerConfig `yaml:"server"`
 	ObsidianVaultPath string       `yaml:"obsidian_vault_path"`
-	BackupDirName     string       `yaml:"backup_dir_name"`
 }
 
 // LoadConfig reads the configuration from the given YAML file path.
@@ -35,23 +35,15 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	if cfg.ObsidianVaultPath == "" || cfg.ObsidianVaultPath == "/path/to/your/obsidian/vault" {
-		return nil, fmt.Errorf("config error: obsidian_vault_path must be set to a valid path in %s", configPath)
+		return nil, fmt.Errorf("config error: OBSIDIAN_VAULT_PATH must be set to a valid path in %s", configPath)
 	}
 
 	if cfg.ObsidianVaultPath == "/" {
-		return nil, fmt.Errorf("config error: obsidian_vault_path cannot be the root directory '/' in %s", configPath)
+		return nil, fmt.Errorf("config error: OBSIDIAN_VAULT_PATH cannot be the root directory '/' in %s", configPath)
 	}
 
-	// Validate that the ObsidianVaultPath exists and is a directory
-	info, err := os.Stat(cfg.ObsidianVaultPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("config error: obsidian_vault_path '%s' does not exist", cfg.ObsidianVaultPath)
-		}
-		return nil, fmt.Errorf("config error: failed to stat obsidian_vault_path '%s': %w", cfg.ObsidianVaultPath, err)
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("config error: obsidian_vault_path '%s' is not a directory", cfg.ObsidianVaultPath)
+	if err := utils.IsDir(cfg.ObsidianVaultPath); err != nil {
+		return nil, fmt.Errorf("config error for OBSIDIAN_VAULT_PATH: %w", err)
 	}
 
 	// Validate required subdirectories
@@ -68,15 +60,8 @@ func validateVaultStructure(vaultPath string) error {
 
 	for _, subdir := range requiredSubdirs {
 		subdirPath := filepath.Join(vaultPath, subdir)
-		info, err := os.Stat(subdirPath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("required subdirectory '%s' not found", subdir)
-			}
-			return fmt.Errorf("failed to check subdirectory '%s': %w", subdir, err)
-		}
-		if !info.IsDir() {
-			return fmt.Errorf("path '%s' exists but is not a directory, expected a subdirectory", subdir)
+		if err := utils.IsDir(subdirPath); err != nil {
+			return fmt.Errorf("required subdirectory '%s' error: %w", subdir, err)
 		}
 	}
 	return nil

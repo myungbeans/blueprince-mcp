@@ -2,30 +2,40 @@ package utils
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// ListFiles lists all non-hidden files in the specified directory.
-// It skips sub-directories and files/directories starting with a ".".
+// ListFiles lists all non-hidden files within the specified directory and its subdirectories.
+// It skips directories and files/directories starting with a ".".
+// Returns paths relative to the starting dirPath.
 func ListFiles(dirPath string) ([]string, error) {
-	entries, err := os.ReadDir(dirPath)
+	var paths []string
+	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			// Propagate errors encountered during traversal
+			return err
+		}
+
+		// Skip hidden directories and their contents
+		if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
+			return filepath.SkipDir
+		}
+
+		// If it's a file and not hidden, add its path
+		if !d.IsDir() && !strings.HasPrefix(d.Name(), ".") {
+			paths = append(paths, path) // Fallback to full path
+		}
+		return nil
+	})
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to read directory '%s': %w", dirPath, err)
+		return nil, fmt.Errorf("error walking directory '%s': %w", dirPath, err)
 	}
 
-	var fileNames []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue // Skip directories
-		}
-		if strings.HasPrefix(entry.Name(), ".") {
-			continue // Skip hidden files (e.g., .DS_Store)
-		}
-		fileNames = append(fileNames, entry.Name())
-	}
-	return fileNames, nil
+	return paths, nil
 }
 
 // CreateDir creates (if needed) a directory at the given path
@@ -49,7 +59,7 @@ func CreateDir(path string, perm os.FileMode) error {
 	return nil
 }
 
-// IsDir checks if the given path exists and is a directory.
+// IsDir checks if the given path is a directory.
 func IsDir(path string) error {
 	info, err := os.Stat(path)
 	if err != nil {

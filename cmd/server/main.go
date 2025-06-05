@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -14,10 +13,12 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func main() {
-	// Assuming config.yaml is at the project root and the binary is run from the project root.
-	// e.g., go run ./cmd/server/main.go
+const (
+	defaultConfigFilePath = "cmd/server/config/local/config.yaml"
+	envVaultPath          = "OBSIDIAN_VAULT_PATH"
+)
 
+func main() {
 	// Initialize logger early
 	logger, err := zap.NewDevelopment() // Use NewDevelopment for more human-friendly output during dev
 	if err != nil {
@@ -26,15 +27,19 @@ func main() {
 	}
 	defer logger.Sync() // Flushes buffer, if any
 
-	// Validate that the server is run from the project root by checking for a sentinel file.
-	// config.yaml is a good candidate.
-	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
-		logger.Fatal("Configuration file not found. Please run the server from the project root directory.", zap.String("configFile", "config.yaml"), zap.Error(err))
-	}
-
-	cfg, err := config.LoadConfig("config.yaml")
-	if err != nil {
-		return
+	var cfg *config.Config
+	vaultPath := os.Getenv(envVaultPath)
+	if vaultPath != "" {
+		logger.Info("Using Obsidian vault path from env variable", zap.String("variable", envVaultPath), zap.String("path", vaultPath))
+		cfg = &config.Config{
+			ObsidianVaultPath: vaultPath,
+		}
+	} else {
+		cfg, err = config.LoadConfig(defaultConfigFilePath)
+		if err != nil {
+			logger.Fatal("Failed to load configuration", zap.Error(err))
+			os.Exit(1)
+		}
 	}
 
 	// Create a new MCP server
@@ -44,31 +49,36 @@ func main() {
 		server.WithToolCapabilities(false),
 	)
 
-	// TODO: remove generated hello_world
-	tool := mcp.NewTool("hello_world",
-		mcp.WithDescription("Say hello to someone"),
-		mcp.WithString("name",
+	// Register Tools
+	registerTools(s, cfg, logger)
+
+	// Start the stdio server
+	logger.Info("Initializing server...")
+	if err := server.ServeStdio(s); err != nil {
+		logger.Fatal("Server error", zap.Error(err))
+	}
+}
+
+func registerTools(s *server.MCPServer, cfg *config.Config, logger *zap.Logger) {
+	createNoteTool := mcp.NewTool("create_note",
+		mcp.WithDescription("Creates a new note."),
+		mcp.WithString("title",
 			mcp.Required(),
-			mcp.Description("Name of the person to greet"),
+			mcp.Description("The title of the note."),
+		),
+		mcp.WithString("tags",
+			mcp.Required(),
+			mcp.Description("Tags that describe some of the topics included in the note"),
+		),
+		mcp.WithString("content",
+			mcp.Required(),
+			mcp.Description("The content of the note."),
 		),
 	)
 
-	// Register Tools
-	// createNoteTool := mcp.NewTool("create_note",
-	// 	mcp.WithDescription("Creates a new note."),
-	// 	mcp.WithString("title",
-	// 		mcp.Required(),
-	// 		mcp.Description("The title of the note."),
-	// 	),
-	// 	mcp.WithString("content",
-	// 		mcp.Required(),
-	// 		mcp.Description("The content of the note."),
-	// 	),
-	// )
-
 	listNotesTool := mcp.NewTool("list_notes",
 		mcp.WithDescription("Lists all notes."),
-		// Add parameters for pagination/filtering later if needed
+		// TODO: Add parameters for pagination/filtering later if needed
 	)
 
 	// readNoteTool := mcp.NewTool("read_note",
@@ -108,25 +118,10 @@ func main() {
 	// )
 
 	// Add Note tool handlers
-	s.AddTool(tool, helloHandler)
-	s.AddTool(listNotesTool, handlers.ListNotesHandler(cfg, logger)) // Pass logger to the factory
-	// s.AddTool(createNoteTool, createNoteHandler)
+	s.AddTool(listNotesTool, handlers.ListNotesHandler(cfg, logger))   // Pass logger to the factory
+	s.AddTool(createNoteTool, handlers.CreateNoteHandler(cfg, logger)) // Pass logger to the factory
 	// s.AddTool(readNoteTool, readNoteHandler)
 	// s.AddTool(updateNoteTool, updateNoteHandler)
 	// s.AddTool(deleteNoteTool, deleteNoteHandler)
 	// s.AddTool(searchNotesTool, searchNotesHandler)
-
-	// Start the stdio server
-	if err := server.ServeStdio(s); err != nil {
-		logger.Fatal("Server error", zap.Error(err))
-	}
-}
-
-func helloHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, err := request.RequireString("name")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
-	}
-
-	return mcp.NewToolResultText(fmt.Sprintf("Hello, %s!", name)), nil
 }

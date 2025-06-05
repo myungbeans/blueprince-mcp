@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt" // Ensure fmt is imported for printing errors
 	"os"
 	"path/filepath"
@@ -15,7 +16,8 @@ import (
 const (
 	defaultVaultBaseDir = "~" // used ONLY to place ~/Documents
 	defaultVaultName    = "Documents/blueprince_mcp"
-	configFile          = "config.yaml" // Assumes setup is run from project root
+	yamlConfigFile      = "configs/local/config.yaml"          // Relative to project root
+	jsonConfigFile      = "configs/claude_desktop/config.json" // Relative to project root
 )
 
 var requiredSubdirs = []string{"people", "puzzles", "rooms", "items", "lore", "general"}
@@ -74,9 +76,14 @@ func setupVault(vaultPath string) error {
 	logger.Info("All required subdirectories are ready.")
 
 	// Update config.yaml
-	err = updateConfigVaultPath(configFile, absVaultPath)
+	err = updateYamlConfigVaultPath(yamlConfigFile, absVaultPath)
 	if err != nil {
-		return fmt.Errorf("failed to update config file '%s': %w", configFile, err)
+		return fmt.Errorf("failed to update config file '%s': %w", yamlConfigFile, err)
+	}
+	// Update claude_desktop_config.json
+	err = updateClaudeDesktopConfig(jsonConfigFile, absVaultPath)
+	if err != nil {
+		return fmt.Errorf("failed to update claude desktop config file '%s': %w", jsonConfigFile, err)
 	}
 
 	logger.Info("Setup complete!")
@@ -87,13 +94,13 @@ func setupVault(vaultPath string) error {
 
 func main() {
 	// Validate that the setup script is run from the project root by checking for a sentinel file.
-	// config.yaml is a good candidate since this flow writes back to config.yaml.
-	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+	// We'll check for the YAML config file at its new location.
+	if _, err := os.Stat(yamlConfigFile); os.IsNotExist(err) {
 		// Initialize a temporary logger for this specific error, as global logger isn't set yet.
 		tempLogger, _ := zap.NewDevelopment()
 		defer tempLogger.Sync()
-		tempLogger.Fatal("Configuration file not found at root of project directory. Please run the setup command from the project root directory or ensure that config.yaml exists.",
-			zap.String("configFile", configFile),
+		tempLogger.Fatal("YAML Configuration file not found. Please run the setup command from the project root directory.",
+			zap.String("configFile", yamlConfigFile),
 			zap.Error(err),
 		)
 		return
@@ -116,8 +123,8 @@ func main() {
 	return
 }
 
-// updateConfigVaultPath reads the config file, updates the obsidian_vault_path, and writes it back.
-func updateConfigVaultPath(configPath, vaultPath string) error {
+// updateYamlConfigVaultPath reads the YAML config file, updates the OBSIDIAN_VAULT_PATH, and writes it back.
+func updateYamlConfigVaultPath(configPath, vaultPath string) error {
 	logger.Info("Updating configuration file",
 		zap.String("configFile", configPath),
 		zap.String("newVaultPath", vaultPath),
@@ -135,7 +142,7 @@ func updateConfigVaultPath(configPath, vaultPath string) error {
 		return fmt.Errorf("failed to unmarshal config file: %w", err)
 	}
 
-	configMap["obsidian_vault_path"] = vaultPath
+	configMap["OBSIDIAN_VAULT_PATH"] = vaultPath
 
 	updatedYAML, err := yaml.Marshal(configMap)
 	if err != nil {
@@ -164,5 +171,69 @@ func updateConfigVaultPath(configPath, vaultPath string) error {
 		return fmt.Errorf("failed to write updated config file: %w", err)
 	}
 	logger.Info("Successfully updated configuration file", zap.String("configFile", configPath))
+	return nil
+}
+
+// updateClaudeDesktopConfig modifies the sample config.json for Claude Desktop,
+// and updates the OBSIDIAN_VAULT_PATH env var
+func updateClaudeDesktopConfig(configPath, vaultPath string) error {
+	logger.Info("Updating Claude Desktop JSON configuration file",
+		zap.String("configFile", configPath),
+		zap.String("newVaultPath", vaultPath),
+	)
+
+	// Read the existing JSON config file
+	jsonFile, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read claude desktop config file '%s': %w", configPath, err)
+	}
+
+	var configMap map[string]interface{}
+	err = json.Unmarshal(jsonFile, &configMap)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal claude desktop config file '%s': %w", configPath, err)
+	}
+
+	// Navigate and update the path
+	mcpServers, ok := configMap["mcpServers"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("claude desktop config: 'mcpServers' key not found or not a map")
+	}
+
+	blueprinceServer, ok := mcpServers["blueprince_notes_mcp"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("claude desktop config: 'mcpServers.blueprince_notes_mcp' key not found or not a map")
+	}
+
+	env, ok := blueprinceServer["env"].(map[string]interface{})
+	if !ok {
+		// If env block doesn't exist, create it
+		env = make(map[string]interface{})
+		blueprinceServer["env"] = env
+		logger.Info("Claude desktop config: 'env' block not found, created a new one.")
+	}
+
+	env["OBSIDIAN_VAULT_PATH"] = vaultPath
+
+	// Marshal back to JSON with indentation for readability
+	updatedJSON, err := json.MarshalIndent(configMap, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated claude desktop config: %w", err)
+	}
+
+	// Create a backup before writing (optional, but good practice)
+	backupPath := configPath + ".bak"
+	if err := os.WriteFile(backupPath, jsonFile, 0644); err != nil {
+		logger.Warn("Failed to create backup of claude desktop config file", zap.String("backupPath", backupPath), zap.Error(err))
+	} else {
+		logger.Info("Created backup of claude desktop config file", zap.String("backupPath", backupPath))
+	}
+
+	// Write the updated JSON config file
+	if err := os.WriteFile(configPath, updatedJSON, 0644); err != nil {
+		return fmt.Errorf("failed to write updated claude desktop config file '%s': %w", configPath, err)
+	}
+	logger.Info("Successfully updated Claude Desktop JSON configuration file", zap.String("configFile", configPath))
+	logger.Info("To complete setup in Claude Desktop, see https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop", zap.String("configFile", configPath))
 	return nil
 }

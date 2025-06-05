@@ -62,6 +62,7 @@ By integrating with an Obsidian vault, this server allows an AI agent (or any MC
 
 ### Running the Server
 
+#### Local
 Make sure you are in the project root directory.
 
 ```bash
@@ -70,9 +71,8 @@ go run ./cmd/server/main.go
 
 The server will start and listen for MCP connections on the configured host and port (defaulting to `localhost:8001`).
 
-### Connecting an MCP Client
-
-Connect your MCP client to the server address (`localhost:8001` by default). The client should then be able to discover and use the available tools (currently `list_notes` and `hello_world`).
+#### Claude Desktop
+See https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop
 
 ## Project Structure
 
