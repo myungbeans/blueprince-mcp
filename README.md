@@ -60,6 +60,10 @@ By integrating with an Obsidian vault, this server allows an AI agent (or any MC
     backup_dir_name: ".obsidian_backup" # Directory name for potential future backups within the vault
     ```
 
+## Build
+run `go build -o ./bin/blueprince-mcp-server ./cmd/server/main.go`
+(TODO: use Earthly to handle build and test cmds?) 
+
 ### Running the Server
 
 #### Local
