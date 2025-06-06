@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/myungbeans/blueprince-mcp/runtime/models/notes"
+	"github.com/myungbeans/blueprince-mcp/runtime/models/vault"
 	"github.com/myungbeans/blueprince-mcp/runtime/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -16,11 +18,11 @@ import (
 const (
 	defaultVaultBaseDir = "~" // used ONLY to place ~/Documents
 	defaultVaultName    = "Documents/blueprince_mcp"
-	yamlConfigFile      = "configs/local/config.yaml"          // Relative to project root
-	jsonConfigFile      = "configs/claude_desktop/config.json" // Relative to project root
+	yamlConfigFile      = "cmd/config/local/config.yaml"          // Relative to project root
+	jsonConfigFile      = "cmd/config/claude_desktop/config.json" // Relative to project root
 )
 
-var requiredSubdirs = []string{"people", "puzzles", "rooms", "items", "lore", "general"}
+var baseRequiredSubdirs = []string{vault.META_DIR, vault.NOTES_DIR, vault.SCREENSHOT_DIR}
 
 var logger *zap.Logger // Global logger instance
 
@@ -29,10 +31,10 @@ var rootCmd = &cobra.Command{
 	Short: "Sets up the Blue Prince MCP Obsidian vault.",
 	Long: `This command initializes the Blue Prince MCP Obsidian vault.
 It creates the specified vault directory (or uses the default "~/Documents/blueprince_mcp/")
-and ensures the required subdirectories (/people, /puzzles, etc.) exist.
+and ensures the required subdirectories (/notes, /meta, /screenshots) exist.
 These subdirs were chosen to allow LLM clients to effectively lookup relevant info on searches,
 while still providing human readabiliy.
-Finally, it updates the 'config.yaml' with the correct vault path.`,
+Finally, it updates the 'config.yaml' and 'claude_desktop_config.json' files with the correct vault path.`,
 	Args: cobra.MaximumNArgs(1), // Allow zero or one argument for vault-path
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger.Info("Starting Blue Prince MCP setup...")
@@ -52,28 +54,38 @@ Finally, it updates the 'config.yaml' with the correct vault path.`,
 
 func setupVault(vaultPath string) error {
 	// Clean the provided vaultPath
-	absVaultPath, err := utils.ResolvePath(vaultPath)
+	absVaultPath, err := utils.ResolveAndCleanPath(vaultPath)
 	if err != nil {
 		return fmt.Errorf("failed to resolve and clean vault path: %w", err)
 	}
-	logger.Debug("Resolved target vault path", zap.String("resolvedPath", absVaultPath), zap.String("initialPath", vaultPath))
 
 	// Create vault directory if it doesn't exist
 	logger.Info("Ensuring vault directory exists", zap.String("path", absVaultPath))
-	if err := utils.CreateDir(absVaultPath, 0755); err != nil { // 0755 permissions: owner rwx, group rx, others rx
+	if err := utils.EnsureDirExists(absVaultPath, 0755); err != nil { // 0755 permissions: owner rwx, group rx, others rx
 		return fmt.Errorf("failed to ensure vault directory '%s': %w", absVaultPath, err)
 	}
 	logger.Info("Vault directory is ready", zap.String("path", absVaultPath))
 
 	// Create required subdirectories
-	for _, subdir := range requiredSubdirs {
-		fullSubdirPath := filepath.Join(absVaultPath, subdir)
-		logger.Info("Ensuring subdirectory exists", zap.String("subdir", subdir), zap.String("path", fullSubdirPath))
-		if err := utils.CreateDir(fullSubdirPath, 0755); err != nil {
-			return fmt.Errorf("failed to ensure subdirectory '%s': %w", fullSubdirPath, err)
+	for _, subdir := range baseRequiredSubdirs {
+		subpath := filepath.Join(absVaultPath, subdir)
+		logger.Info("Ensuring subdirectory exists", zap.String("subdir", subdir), zap.String("path", subpath))
+		if err := utils.EnsureDirExists(subpath, 0755); err != nil {
+			return fmt.Errorf("failed to ensure subdirectory '%s': %w", subpath, err)
 		}
 	}
-	logger.Info("All required subdirectories are ready.")
+	logger.Info("All base required subdirectories are ready.")
+
+	// Create note category subdirectories within NOTES_DIR
+	notesDirPath := filepath.Join(absVaultPath, vault.NOTES_DIR)
+	for _, categorySubdir := range notes.Categories {
+		category := filepath.Join(notesDirPath, categorySubdir)
+		logger.Info("Ensuring note category subdirectory exists", zap.String("subdir", categorySubdir), zap.String("path", category))
+		if err := utils.EnsureDirExists(category, 0755); err != nil {
+			return fmt.Errorf("failed to ensure ./note/{category} subdirectory '%s': %w", category, err)
+		}
+	}
+	logger.Info("All ./note/{category} subdirectories are ready.")
 
 	// Update config.yaml
 	err = updateYamlConfigVaultPath(yamlConfigFile, absVaultPath)
@@ -99,8 +111,7 @@ func main() {
 		// Initialize a temporary logger for this specific error, as global logger isn't set yet.
 		tempLogger, _ := zap.NewDevelopment()
 		defer tempLogger.Sync()
-		tempLogger.Fatal("YAML Configuration file not found. Please run the setup command from the project root directory.",
-			zap.String("configFile", yamlConfigFile),
+		tempLogger.Fatal("Please run the setup command from the project root directory.",
 			zap.Error(err),
 		)
 		return
@@ -142,7 +153,7 @@ func updateYamlConfigVaultPath(configPath, vaultPath string) error {
 		return fmt.Errorf("failed to unmarshal config file: %w", err)
 	}
 
-	configMap["OBSIDIAN_VAULT_PATH"] = vaultPath
+	configMap["obsidian_vault_path"] = vaultPath // Use lowercase key to match YAML
 
 	updatedYAML, err := yaml.Marshal(configMap)
 	if err != nil {

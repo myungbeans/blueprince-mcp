@@ -1,0 +1,12 @@
+{
+  "globalShortcut": "",
+  "mcpServers": {
+    "blueprince_notes_mcp": {
+      "args": [],
+      "command": "/Users/michael.myung/dev/blueprince-mcp/bin/blueprince-mcp-server",
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/Users/michael.myung/Documents/blueprince_mcp"
+      }
+    }
+  }
+}

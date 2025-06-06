@@ -11,56 +11,38 @@ import (
 // ListFiles lists all non-hidden files within the specified directory and its subdirectories.
 // It skips directories and files/directories starting with a ".".
 // Returns paths relative to the starting dirPath.
-func ListFiles(dirPath string) ([]string, error) {
+func ListFiles(root string) ([]string, error) {
 	var paths []string
-	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, blob fs.DirEntry, err error) error {
 		if err != nil {
 			// Propagate errors encountered during traversal
 			return err
 		}
 
 		// Skip hidden directories and their contents
-		if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
+		if blob.IsDir() && strings.HasPrefix(blob.Name(), ".") {
 			return filepath.SkipDir
 		}
 
 		// If it's a file and not hidden, add its path
-		if !d.IsDir() && !strings.HasPrefix(d.Name(), ".") {
-			paths = append(paths, path) // Fallback to full path
+		if !blob.IsDir() && !strings.HasPrefix(blob.Name(), ".") {
+			relPath, err := filepath.Rel(root, path)
+			if err != nil {
+				// Skip if relative path fails
+				return nil
+			}
+			paths = append(paths, relPath)
 		}
 		return nil
 	})
-
 	if err != nil {
-		return nil, fmt.Errorf("error walking directory '%s': %w", dirPath, err)
+		return nil, fmt.Errorf("error walking directory '%s': %w", root, err)
 	}
-
 	return paths, nil
 }
 
-// CreateDir creates (if needed) a directory at the given path
-func CreateDir(path string, perm os.FileMode) error {
-	_, err := os.Stat(path)
-	// dir already exists
-	if err == nil {
-		return nil
-	}
-
-	// Failure to chceck the dir
-	if !os.IsNotExist(err) {
-		return fmt.Errorf("failed to check directory '%s': %w", path, err)
-	}
-
-	// Create the dir
-	if err := os.MkdirAll(path, perm); err != nil {
-		return fmt.Errorf("failed to create directory '%s': %w", path, err)
-	}
-
-	return nil
-}
-
-// IsDir checks if the given path is a directory.
-func IsDir(path string) error {
+// ValidateDir checks if the given path is a directory.
+func ValidateDir(path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -68,9 +50,11 @@ func IsDir(path string) error {
 		}
 		return fmt.Errorf("failed to stat path '%s': %w", path, err)
 	}
+
 	if !info.IsDir() {
 		return fmt.Errorf("path '%s' is not a directory", path)
 	}
+
 	return nil
 }
 
@@ -88,8 +72,8 @@ func ExpandTilde(path string) (string, error) {
 	return strings.Replace(path, "~", homeDir, 1), nil
 }
 
-// ResolvePath expands tilde, gets the absolute path, and cleans it.
-func ResolvePath(path string) (string, error) {
+// ResolveAndCleanPath expands tilde, gets the absolute path, and cleans it.
+func ResolveAndCleanPath(path string) (string, error) {
 	expandedPath, err := ExpandTilde(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to expand path: %w", err)
@@ -101,4 +85,24 @@ func ResolvePath(path string) (string, error) {
 	}
 
 	return filepath.Clean(absPath), nil
+}
+
+// EnsureDirExists checks if a directory exists at the given path, and creates it if it doesn't.
+// It uses the provided file mode for creation.
+func EnsureDirExists(path string, perm os.FileMode) error {
+	_, err := os.Stat(path)
+	// create dir if does not exist
+	if os.IsNotExist(err) {
+		// rerport errors during creation
+		if err := os.MkdirAll(path, perm); err != nil {
+			return fmt.Errorf("failed to create directory '%s': %w", path, err)
+		}
+		return nil
+	}
+
+	// other error types
+	if err != nil {
+		return fmt.Errorf("failed to check directory '%s': %w", path, err)
+	}
+	return nil
 }
