@@ -13,4 +13,5 @@ func Register(ctx context.Context, s *server.MCPServer, cfg *config.Config) {
 	s.AddTool(createNoteTool(), createNoteHandler(ctx, cfg))
 	s.AddTool(readNoteTool(), readNoteHandler(ctx, cfg))
 	s.AddTool(updateNoteTool(), updateNoteHandler(ctx, cfg))
+	s.AddTool(deleteNoteTool(), deleteNoteHandler(ctx, cfg))
 }
