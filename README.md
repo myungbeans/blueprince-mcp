@@ -5,36 +5,23 @@ This repository contains the code for an MCP (Multi-Agent Communication Protocol
 This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
 
 **⚠️ IMPORTANT: SPOILER-FREE USAGE**
-This MCP server is designed to preserve your Blue Prince gameplay experience. When using with Claude Desktop:
-- Claude will ONLY use information from your notes
-- Claude cannot and will not reference external Blue Prince information  
+This MCP server is designed to preserve your Blue Prince gameplay experience. When using with an MCP client (e.g. Claude Desktop):
+- The Client will ONLY use information from your notes
+- The Client cannot and will not reference external Blue Prince information  
 - Spoiler prevention rules are automatically provided as an MCP resource
-- Claude will have access to explicit spoiler prevention guidelines
-
-Add this to your Claude Desktop config:
-```json
-{
-  "mcpServers": {
-    "blueprince-notes": {
-      "command": "go",
-      "args": ["run", "/path/to/blueprince-mcp/cmd/server/main.go"],
-      "env": {
-        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
-      }
-    }
-  }
-}
-```
-
-**Automatic Protection**: The server exposes spoiler prevention rules as an MCP resource that Claude can read and follow.
+- The Client will have access to explicit spoiler prevention guidelines
 
 ## Features
 
 - **MCP Server:** Implements the MCP protocol to expose note-taking capabilities as tools and resources.
 - **Local Vault Storage:** Stores notes as markdown files in a structured local directory (compatible with Obsidian).
 - **Structured Notes:** Organizes notes in predefined categories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) with intelligent metadata extraction.
-- **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients (excludes hidden directories and files suc has `.obsidian/`).
-- **Spoiler Prevention:** Built-in content validation to prevent AI from adding investigation prompts or analysis that could spoil gameplay.
+- **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients (excludes `.obsidian/` directories).
+- **Spoiler Prevention System:** Multi-layered protection including:
+  - Built-in content validation to prevent investigation prompts
+  - Spoiler prevention rules automatically exposed as an MCP resource
+  - Client-side enforcement through tool descriptions and server metadata
+  - Server-side validation of all content creation
 - **Complete CRUD Operations:** 
   - ✅ `list_notes` - Lists all notes in the vault
   - ✅ `create_note` - Creates structured notes with intelligent categorization and spoiler prevention
@@ -123,8 +110,23 @@ OBSIDIAN_VAULT_PATH=/path/to/vault go run ./cmd/server/main.go
 ```
 
 #### Claude Desktop Integration
-See https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop
+See the [Claude Desktop instructions for adding custom MCP servers](https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop)
 
+Tl;dr 
+Add this to your Claude Desktop config:
+```json
+{
+  "mcpServers": {
+    "blueprince-notes": {
+      "command": "/path/to/blueprince-mcp/bin/blueprince-mcp-server",
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
+      }
+    }
+  }
+}
+```
+**make sure to update your /path/to's**
 
 ### Testing with CLI Tools
 
@@ -198,7 +200,11 @@ blueprince-mcp/
 - Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`
 - Vault directory structure and setup utility
 - Comprehensive logging and error handling
-- Spoiler prevention system with content validation
+- Multi-layered spoiler prevention system:
+  - Server-side content validation and spoiler detection
+  - Spoiler prevention rules exposed as MCP resource
+  - Client-side enforcement through tool descriptions
+  - Automatic rule delivery to MCP clients
 - Path security and traversal prevention
 - .obsidian directory filtering for clean vault management
 - Utility function abstraction to eliminate code duplication
@@ -208,11 +214,11 @@ blueprince-mcp/
 
 ### 📋 Planned
 - `delete_note` tool implementation
-- Search and query tools for note discovery
-- Note relationship and connection mapping
-- Enhanced metadata extraction and categorization
-- Template system for different note types
-- Integration with game progress tracking
+- Integration with screenshots
+  - Intelligently interpret screenshots to create notes with tags and descriptions of images
+  - Embed notes with smart links to related images
+  - Serve images back to MCP Client
+  - Integrate with Google Drive to sync screenshots from Steam Deck -> Drive -> local
 
 ## Contributing
 
