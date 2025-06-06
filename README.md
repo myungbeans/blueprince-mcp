@@ -33,6 +33,16 @@ This MCP server is designed to preserve your Blue Prince gameplay experience. Wh
 - **Flexible Configuration:** Supports both file-based config and environment variable overrides.
 - **Structured Logging:** Uses `go.uber.org/zap` for comprehensive logging and debugging.
 
+## Usage Guide
+"Write a new note. I'm in the corridor. There is a painting of a tiger and a cupcake stand? Three windows. Two benches and hats."
+
+The MCP Client will then intelligently format the note and tag it appropraitely.
+
+In the future you can ask
+"Where have I seen windows before? Can you list all rooms that have windows in them?"
+
+The MCP Client will then scan all of your notes (and only your notes) to look for what _you_ know to be all rooms that have windows in them.
+
 ## Getting Started
 
 ### Prerequisites
