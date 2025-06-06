@@ -17,7 +17,9 @@ import (
 )
 
 // Register scans the rootDir's children and registers all found files as MCP Resources.
-func Register(s *server.MCPServer, rootDir string, logger *zap.Logger) error {
+func Register(ctx context.Context, s *server.MCPServer, rootDir string) error {
+	logger := utils.Logger(ctx)
+
 	absRootDir, err := utils.ResolveAndCleanPath(rootDir)
 	if err != nil {
 		return err

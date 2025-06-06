@@ -1,11 +1,13 @@
 package tools
 
 import (
+	"context"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
 	"github.com/myungbeans/blueprince-mcp/runtime/models/notes"
-	"go.uber.org/zap"
+	"github.com/myungbeans/blueprince-mcp/runtime/utils"
 	// "github.com/mark3labs/mcp-go/server"
 	// "github.com/myungbeans/blueprince-mcp/cmd/config"
 	// "go.uber.org/zap"
@@ -57,7 +59,8 @@ Expected Call:
 	return createNoteTool
 }
 
-func createNoteHandler(cfg *config.Config, logger *zap.Logger) server.ToolHandlerFunc {
+func createNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+	logger := utils.Logger(ctx)
 	// TODO: START IMPLEMENTATION FROM HERE
 	return nil
 }

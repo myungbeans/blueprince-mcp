@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -17,17 +18,19 @@ const (
 	server_version        = "0.0.0"
 	defaultConfigFilePath = "cmd/config/local/config.yaml"
 	envVaultPath          = "OBSIDIAN_VAULT_PATH"
+	loggerKey             = "logger"
 )
 
 func main() {
 	// Initialize logger early
-	logger, err := zap.NewDevelopment() // Use NewDevelopment for more human-friendly output during dev
+	logger, err := zap.NewDevelopment() // TODO: using NewDevelopment for more human-friendly output during dev
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger. Driving blind is dangerous. Abort!\nError: %v\n", err)
 		os.Exit(1)
 	}
 	defer logger.Sync() // Flushes buffer, if any
 
+	ctx := context.WithValue(context.Background(), loggerKey, logger)
 	var cfg *config.Config
 	vaultPath := os.Getenv(envVaultPath)
 	if vaultPath != "" {
@@ -51,13 +54,13 @@ func main() {
 	)
 
 	// Register Resources
-	if err := resources.Register(s, cfg.ObsidianVaultPath, logger); err != nil {
+	if err := resources.Register(ctx, s, cfg.ObsidianVaultPath); err != nil {
 		logger.Fatal("Failed to register file resources", zap.Error(err))
 		os.Exit(1)
 	}
 
 	// Register Tools
-	tools.Register(s, cfg, logger)
+	tools.Register(ctx, s, cfg)
 
 	// Start the stdio server
 	logger.Info("Initializing server...")
