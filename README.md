@@ -9,15 +9,18 @@ This MCP server exposes tools and resources for managing local notes (stored as 
 - **MCP Server:** Implements the MCP protocol to expose note-taking capabilities as tools and resources.
 - **Local Vault Storage:** Stores notes as markdown files in a structured local directory (compatible with Obsidian).
 - **Structured Notes:** Organizes notes in predefined categories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) with intelligent metadata extraction.
-- **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients.
-- **Smart Note Creation:** AI-powered note creation with structured metadata and content templates designed to avoid spoilers.
-- **Note Management Tools:** 
+- **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients (excludes hidden directories and files suc has `.obsidian/`).
+- **Spoiler Prevention:** Built-in content validation to prevent AI from adding investigation prompts or analysis that could spoil gameplay.
+- **Complete CRUD Operations:** 
   - ✅ `list_notes` - Lists all notes in the vault
-  - ✅ `create_note` - Creates structured notes with intelligent categorization (schema defined, handler in progress)
-  - 🚧 Read, Update, Delete operations (files exist, implementation pending)
+  - ✅ `create_note` - Creates structured notes with intelligent categorization and spoiler prevention
+  - ✅ `read_note` - Reads complete note content including metadata
+  - ✅ `update_note` - Updates existing notes with new content
+  - 📋 `delete_note` - Planned for future implementation
+- **CLI Testing Tools:** Comprehensive command-line interface for manual testing and debugging.
 - **Setup Utility:** Go program to initialize vault directory structure and configuration.
-- **Flexible Configuration:** Supports configs for local server and plugin to Claude Desktop.
-- **Structured Logging:** Uses `go.uber.org/zap` for comprehensive logging.
+- **Flexible Configuration:** Supports both file-based config and environment variable overrides.
+- **Structured Logging:** Uses `go.uber.org/zap` for comprehensive logging and debugging.
 
 ## Getting Started
 
@@ -65,9 +68,17 @@ This MCP server exposes tools and resources for managing local notes (stored as 
     backup_dir_name: ".obsidian_backup" # Directory name for potential future backups within the vault
     ```
 
-## Build
-run `go build -o ./bin/blueprince-mcp-server ./cmd/server/main.go`
-(TODO: use Earthly to handle build and test cmds?) 
+## Build & Usage
+
+### Building the Server
+```bash
+go build -o ./bin/blueprince-mcp-server ./cmd/server/main.go
+```
+
+### Building the CLI Tools
+```bash
+go build -o ./bin/blueprince-tools ./cmd/tools/
+```
 
 ### Running the Server
 
@@ -80,8 +91,56 @@ go run ./cmd/server/main.go
 
 The server will start and listen for MCP connections via stdio transport.
 
-#### Claude Desktop
+#### Environment Configuration
+You can override the vault path using an environment variable:
+
+```bash
+OBSIDIAN_VAULT_PATH=/path/to/vault go run ./cmd/server/main.go
+```
+
+#### Claude Desktop Integration
 See https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop
+
+Add this to your Claude Desktop config:
+```json
+{
+  "mcpServers": {
+    "blueprince-notes": {
+      "command": "go",
+      "args": ["run", "/path/to/blueprince-mcp/cmd/server/main.go"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
+      }
+    }
+  }
+}
+```
+
+### Testing with CLI Tools
+
+The project includes a comprehensive CLI for manual testing:
+
+```bash
+# List all notes
+./bin/blueprince-tools list
+
+# Create a new note
+./bin/blueprince-tools create people/character.md \
+  --title "Character Name" \
+  --content "Character description"
+
+# Read a note
+./bin/blueprince-tools read people/character.md
+
+# Update a note
+./bin/blueprince-tools update people/character.md \
+  --content "Updated character information"
+
+# Use verbose mode for debugging
+./bin/blueprince-tools list --verbose
+```
+
+See [`cmd/tools/README.md`](cmd/tools/README.md) for detailed CLI documentation and examples.
 
 ## Project Structure
 
@@ -95,15 +154,28 @@ blueprince-mcp/
 │   ├── mcp/
 │   │   ├── tools/              # MCP tool implementations
 │   │   │   ├── list.go         # ✅ List notes tool
-│   │   │   ├── create.go       # 🚧 Create note tool (in progress)
-│   │   │   ├── read.go         # 📋 Read note tool (planned)
-│   │   │   ├── update.go       # 📋 Update note tool (planned)
-│   │   │   └── delete.go       # 📋 Delete note tool (planned)
+│   │   │   ├── create.go       # ✅ Create note tool
+│   │   │   ├── read.go         # ✅ Read note tool
+│   │   │   ├── update.go       # ✅ Update note tool
+│   │   │   ├── delete.go       # 📋 Delete note tool (planned)
+│   │   │   └── register.go     # Tool registration
 │   │   └── resources/          # MCP resource system
 │   ├── models/
 │   │   ├── notes/              # Note structure and schemas
 │   │   └── vault/              # Vault constants and structure
 │   └── utils/                  # Common utilities (logging, file ops)
+├── cmd/
+│   ├── tools/                  # CLI testing tools
+│   │   ├── main.go            # CLI root command
+│   │   ├── client.go          # MCP client implementation
+│   │   ├── list.go            # List command
+│   │   ├── read.go            # Read command  
+│   │   ├── create.go          # Create command
+│   │   ├── update.go          # Update command
+│   │   └── README.md          # CLI documentation
+│   ├── server/main.go          # Main MCP server application
+│   ├── setup/main.go           # Vault initialization utility
+│   └── config/                 # Configuration management
 └── bin/                        # Built binaries
 ```
 
@@ -111,17 +183,21 @@ blueprince-mcp/
 
 ### ✅ Completed
 - MCP server framework with stdio transport
-- Resource system exposing all vault files to AI clients
+- Resource system exposing all vault files to AI clients  
 - Structured note schema with metadata and categories
-- `list_notes` tool implementation
+- Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`
 - Vault directory structure and setup utility
 - Comprehensive logging and error handling
-
-### 🚧 In Progress
-- `create_note` tool implementation (schema complete, handler in development)
+- Spoiler prevention system with content validation
+- Path security and traversal prevention
+- .obsidian directory filtering for clean vault management
+- Utility function abstraction to eliminate code duplication
+- Complete CLI testing tools with Cobra framework
+- Subprocess communication for reliable MCP testing
+- Robust configuration system with environment variable support
 
 ### 📋 Planned
-- Complete CRUD operations: `read_note`, `update_note`, `delete_note`
+- `delete_note` tool implementation
 - Search and query tools for note discovery
 - Note relationship and connection mapping
 - Enhanced metadata extraction and categorization
