@@ -19,20 +19,24 @@ func ListFiles(root string) ([]string, error) {
 			return err
 		}
 
-		// Skip hidden directories and their contents
-		if blob.IsDir() && strings.HasPrefix(blob.Name(), ".") {
-			return filepath.SkipDir
+		// Skip unwanted paths (hidden files and paths)
+		if ShouldSkipPath(path, blob) {
+			if blob.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 
-		// If it's a file and not hidden, add its path
-		if !blob.IsDir() && !strings.HasPrefix(blob.Name(), ".") {
-			relPath, err := filepath.Rel(root, path)
-			if err != nil {
-				// Skip if relative path fails
-				return nil
-			}
-			paths = append(paths, relPath)
+		if blob.IsDir() {
+			return nil
 		}
+
+		relPath, err := filepath.Rel(root, path)
+		if err != nil {
+			// Skip if relative path fails
+			return nil
+		}
+		paths = append(paths, relPath)
 		return nil
 	})
 	if err != nil {
@@ -146,6 +150,18 @@ func ExtractStringParam(params map[string]any, paramName string) (string, error)
 	}
 
 	return paramValue, nil
+}
+
+// ShouldSkipPath determines if a path should be skipped during file traversal
+func ShouldSkipPath(path string, info os.DirEntry) bool {
+	name := info.Name()
+
+	// Skip all hidden files and directories (starting with .)
+	if strings.HasPrefix(name, ".") {
+		return true
+	}
+
+	return false
 }
 
 // EnsureDirExists checks if a directory exists at the given path, and creates it if it doesn't.

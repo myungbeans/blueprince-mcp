@@ -40,6 +40,14 @@ func Register(ctx context.Context, s *server.MCPServer, rootDir string) error {
 			return walkErr
 		}
 
+		// Skip unwanted paths (.obsidian, hidden files, etc.)
+		if utils.ShouldSkipPath(fullFilePath, d) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// Process only files
 		if d.IsDir() {
 			return nil
