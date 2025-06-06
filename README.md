@@ -175,7 +175,7 @@ blueprince-mcp/
 │   │   │   ├── create.go       # ✅ Create note tool
 │   │   │   ├── read.go         # ✅ Read note tool
 │   │   │   ├── update.go       # ✅ Update note tool
-│   │   │   ├── delete.go       # 📋 Delete note tool (planned)
+│   │   │   ├── delete.go       # ✅ Delete note tool
 │   │   │   └── register.go     # Tool registration
 │   │   └── resources/          # MCP resource system
 │   ├── models/
@@ -203,7 +203,7 @@ blueprince-mcp/
 - MCP server framework with stdio transport
 - Resource system exposing all vault files to AI clients  
 - Structured note schema with metadata and categories
-- Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`
+- Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`, `delete_note`
 - Vault directory structure and setup utility
 - Comprehensive logging and error handling
 - Multi-layered spoiler prevention system:
@@ -219,7 +219,6 @@ blueprince-mcp/
 - Robust configuration system with environment variable support
 
 ### 📋 Planned
-- `delete_note` tool implementation
 - Integration with screenshots
   - Intelligently interpret screenshots to create notes with tags and descriptions of images
   - Embed notes with smart links to related images
