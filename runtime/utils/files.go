@@ -87,6 +87,67 @@ func ResolveAndCleanPath(path string) (string, error) {
 	return filepath.Clean(absPath), nil
 }
 
+// ValidateNotePath validates and cleans a note path for security
+// Returns the cleaned path and any validation error
+func ValidateNotePath(notePath string) (string, error) {
+	if notePath == "" {
+		return "", fmt.Errorf("note path cannot be empty")
+	}
+
+	// Clean the path to prevent path traversal
+	cleanPath := filepath.Clean(notePath)
+
+	// Check for path traversal attempts or absolute paths
+	if strings.HasPrefix(cleanPath, "..") || filepath.IsAbs(cleanPath) {
+		return "", fmt.Errorf("invalid note path: '%s'. Must be a relative path within the vault", notePath)
+	}
+
+	return cleanPath, nil
+}
+
+// BuildSecureNotePath constructs and validates a full path to a note file within the vault
+// Returns the full path and any security validation error
+func BuildSecureNotePath(vaultPath, cleanNotePath string) (string, error) {
+	// Construct the full path to the note file
+	fullPath := filepath.Join(vaultPath, "notes", cleanNotePath)
+
+	// Security check: Ensure the resolved path is still within the notes directory
+	absNotesPath, err := filepath.Abs(filepath.Join(vaultPath, "notes"))
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve notes directory path: %w", err)
+	}
+
+	absFullPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve full file path: %w", err)
+	}
+
+	if !strings.HasPrefix(absFullPath, absNotesPath) {
+		return "", fmt.Errorf("access denied: path '%s' is outside the notes directory", cleanNotePath)
+	}
+
+	return fullPath, nil
+}
+
+// ExtractStringParam extracts and validates a string parameter from MCP arguments
+func ExtractStringParam(params map[string]any, paramName string) (string, error) {
+	if params == nil {
+		return "", fmt.Errorf("missing arguments")
+	}
+
+	paramRaw, ok := params[paramName]
+	if !ok {
+		return "", fmt.Errorf("missing required parameter: %s", paramName)
+	}
+
+	paramValue, ok := paramRaw.(string)
+	if !ok {
+		return "", fmt.Errorf("parameter '%s' must be a string", paramName)
+	}
+
+	return paramValue, nil
+}
+
 // EnsureDirExists checks if a directory exists at the given path, and creates it if it doesn't.
 // It uses the provided file mode for creation.
 func EnsureDirExists(path string, perm os.FileMode) error {

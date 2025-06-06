@@ -4,56 +4,76 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
-	"github.com/myungbeans/blueprince-mcp/runtime/models/vault"
+	"github.com/myungbeans/blueprince-mcp/runtime/utils"
 	"go.uber.org/zap"
 )
 
-// ReadNoteHandler creates a handler for reading the content of a specific note.
-func ReadNoteHandler(cfg *config.Config, logger *zap.Logger) server.ToolHandlerFunc {
+// readNoteTool returns the configured mcp.Tool for reading notes
+func readNoteTool() mcp.Tool {
+	return mcp.Tool{
+		Name:        "read_note",
+		Description: "Reads the content of a specific note by its path. Use this to retrieve the full content of a note file including metadata and content.",
+		InputSchema: mcp.ToolInputSchema{
+			Type: "object",
+			Properties: map[string]any{
+				"path": map[string]string{
+					"type":        "string",
+					"description": "Path to the note file relative to the notes directory (e.g., 'people/simon_jones.md', 'rooms/nook_tiger_paintings.md')",
+				},
+			},
+			Required: []string{"path"},
+		},
+	}
+}
+
+// readNoteHandler creates a handler for reading the content of a specific note
+func readNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+	logger := utils.Logger(ctx)
+
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		noteID, err := request.RequireString("id")
+		params := request.GetArguments()
+		if params == nil {
+			return mcp.NewToolResultError("Missing arguments for read_note"), nil
+		}
+
+		// Extract and validate path parameter
+		notePath, err := utils.ExtractStringParam(params, "path")
 		if err != nil {
-			logger.Error("Missing required parameter 'id' for read_note", zap.Error(err))
-			return mcp.NewToolResultError(fmt.Sprintf("Missing required parameter 'id': %v", err)), nil
+			return mcp.NewToolResultError(fmt.Sprintf("Parameter validation failed: %v", err)), nil
 		}
 
-		// Clean the noteID to prevent path traversal issues (e.g. ".." components)
-		// and ensure it's treated as a relative path.
-		cleanNoteID := filepath.Clean(noteID)
-		if strings.HasPrefix(cleanNoteID, "..") || filepath.IsAbs(cleanNoteID) {
-			logger.Warn("Invalid note ID (path traversal attempt or absolute path)", zap.String("noteID", noteID), zap.String("cleanNoteID", cleanNoteID))
-			return mcp.NewToolResultError(fmt.Sprintf("Invalid note ID: '%s'. Must be a relative path within the vault.", noteID)), nil
+		// Validate and clean the path for security
+		cleanPath, err := utils.ValidateNotePath(notePath)
+		if err != nil {
+			logger.Warn("Invalid note path", zap.String("originalPath", notePath), zap.Error(err))
+			return mcp.NewToolResultError(err.Error()), nil
 		}
 
-		// Construct the full path to the note file
-		// NoteID is expected to be relative to the NOTES_DIR
-		fullPath := filepath.Join(cfg.ObsidianVaultPath, vault.NOTES_DIR, cleanNoteID)
-
-		// Security check: Ensure the resolved path is still within the ObsidianVaultPath
-		absVaultPath, _ := filepath.Abs(filepath.Join(cfg.ObsidianVaultPath, vault.NOTES_DIR)) // Check against notes dir
-		absFullPath, err := filepath.Abs(fullPath)
-		if err != nil || !strings.HasPrefix(absFullPath, absVaultPath) {
-			logger.Warn("Path traversal attempt or invalid path for read_note", zap.String("noteID", noteID), zap.String("fullPath", fullPath), zap.String("absVaultPath", absVaultPath))
-			return mcp.NewToolResultError(fmt.Sprintf("Access denied or invalid path for note ID: '%s'", noteID)), nil
+		// Build secure full path
+		fullPath, err := utils.BuildSecureNotePath(cfg.ObsidianVaultPath, cleanPath)
+		if err != nil {
+			logger.Warn("Security validation failed for note path",
+				zap.String("notePath", notePath),
+				zap.String("cleanPath", cleanPath),
+				zap.Error(err))
+			return mcp.NewToolResultError(err.Error()), nil
 		}
 
-		// Read the file content
+		// Check if file exists and read the content
 		content, err := os.ReadFile(fullPath)
 		if err != nil {
 			logger.Error("Failed to read note file", zap.String("filePath", fullPath), zap.Error(err))
 			if os.IsNotExist(err) {
-				return mcp.NewToolResultError(fmt.Sprintf("Note not found with ID: '%s'", noteID)), nil
+				return mcp.NewToolResultError(fmt.Sprintf("Note not found: '%s'", notePath)), nil
 			}
-			return mcp.NewToolResultError(fmt.Sprintf("Failed to read note file with ID '%s': %v", noteID, err)), nil
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to read note file '%s': %v", notePath, err)), nil
 		}
 
-		logger.Info("Note read successfully", zap.String("filePath", fullPath))
+		logger.Info("Note read successfully", zap.String("path", notePath))
 		return mcp.NewToolResultText(string(content)), nil
 	}
 }

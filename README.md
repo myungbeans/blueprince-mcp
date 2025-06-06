@@ -2,17 +2,22 @@
 
 This repository contains the code for an MCP (Multi-Agent Communication Protocol) server designed to act as a dedicated note-taking and brainstorming assistant specifically tailored for playing the game **Blue Prince**.
 
-By integrating with an Obsidian vault, this server allows an AI agent (or any MCP client) to interact with your game notes, helping you track characters, locations, items, lore, puzzles, and general thoughts as you explore the mysterious world of Blue Prince.
+This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
 
 ## Features
 
-- **MCP Server:** Implements the MCP protocol to expose note-taking capabilities as tools.
-- **Obsidian Vault Integration:** Stores notes directly within a local Obsidian vault directory structure.
-- **Structured Notes:** Enforces a predefined directory structure within the vault (`/people`, `/puzzles`, `/rooms`, `/items`, `/lore`, `/general`) to help organize information and facilitate targeted AI interactions.
-- **Basic Note Management Tools:** Provides initial tools for listing files (representing notes) within the vault. (Future tools will include Create, Read, Update, and Delete operations).
-- **Setup Utility:** A convenient Go program (`cmd/setup`) to initialize the Obsidian vault directory and configure the server's `config.yaml`.
-- **Configuration:** Uses a `config.yaml` file for server settings and vault location.
-- **Structured Logging:** Utilizes `go.uber.org/zap` for improved logging.
+- **MCP Server:** Implements the MCP protocol to expose note-taking capabilities as tools and resources.
+- **Local Vault Storage:** Stores notes as markdown files in a structured local directory (compatible with Obsidian).
+- **Structured Notes:** Organizes notes in predefined categories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) with intelligent metadata extraction.
+- **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients.
+- **Smart Note Creation:** AI-powered note creation with structured metadata and content templates designed to avoid spoilers.
+- **Note Management Tools:** 
+  - ✅ `list_notes` - Lists all notes in the vault
+  - ✅ `create_note` - Creates structured notes with intelligent categorization (schema defined, handler in progress)
+  - 🚧 Read, Update, Delete operations (files exist, implementation pending)
+- **Setup Utility:** Go program to initialize vault directory structure and configuration.
+- **Flexible Configuration:** Supports configs for local server and plugin to Claude Desktop.
+- **Structured Logging:** Uses `go.uber.org/zap` for comprehensive logging.
 
 ## Getting Started
 
@@ -26,7 +31,7 @@ By integrating with an Obsidian vault, this server allows an AI agent (or any MC
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your_username/blueprince-mcp.git # Replace with your repo URL
+    git clone https://github.com/myungbeans/blueprince-mcp.git
     cd blueprince-mcp
     ```
 
@@ -45,7 +50,7 @@ By integrating with an Obsidian vault, this server allows an AI agent (or any MC
     go run ./cmd/setup /path/to/your/custom/vault
     ```
 
-    The setup utility will ensure the required subdirectories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) exist within the vault.
+    The setup utility will ensure the required subdirectories (`notes/people`, `notes/puzzles`, `notes/rooms`, `notes/items`, `notes/lore`, `notes/general`) exist within the vault, along with `meta/` and `screenshots/` directories.
 
 3.  **Review `config.yaml`:**
     The setup utility updates `config.yaml` with the `obsidian_vault_path`. You can review this file and adjust other settings like `server.host` or `server.port` if needed.
@@ -66,32 +71,62 @@ run `go build -o ./bin/blueprince-mcp-server ./cmd/server/main.go`
 
 ### Running the Server
 
-#### Local
+#### Local Development
 Make sure you are in the project root directory.
 
 ```bash
 go run ./cmd/server/main.go
 ```
 
-The server will start and listen for MCP connections on the configured host and port (defaulting to `localhost:8001`).
+The server will start and listen for MCP connections via stdio transport.
 
 #### Claude Desktop
 See https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop
 
 ## Project Structure
 
-- `cmd/server`: Contains the main MCP server application.
-- `cmd/setup`: Contains the utility program for initial setup.
-- `cmd/server/config`: Configuration loading logic.
-- `runtime/handlers`: Placeholder and initial implementations for tool handlers (e.g., `list.go`).
-- `runtime/utils`: Common utility functions (e.g., file system operations in `files.go`).
+```
+blueprince-mcp/
+├── cmd/
+│   ├── server/main.go          # Main MCP server application
+│   ├── setup/main.go           # Vault initialization utility
+│   └── config/                 # Configuration management
+├── runtime/
+│   ├── mcp/
+│   │   ├── tools/              # MCP tool implementations
+│   │   │   ├── list.go         # ✅ List notes tool
+│   │   │   ├── create.go       # 🚧 Create note tool (in progress)
+│   │   │   ├── read.go         # 📋 Read note tool (planned)
+│   │   │   ├── update.go       # 📋 Update note tool (planned)
+│   │   │   └── delete.go       # 📋 Delete note tool (planned)
+│   │   └── resources/          # MCP resource system
+│   ├── models/
+│   │   ├── notes/              # Note structure and schemas
+│   │   └── vault/              # Vault constants and structure
+│   └── utils/                  # Common utilities (logging, file ops)
+└── bin/                        # Built binaries
+```
 
-## Future Development
+## Current Status & Roadmap
 
-- Implement full CRUD (Create, Read, Update, Delete) operations for notes.
-- Implement a search tool for notes.
-- Add more sophisticated note parsing and structuring capabilities.
-- Explore additional tools for brainstorming and game assistance.
+### ✅ Completed
+- MCP server framework with stdio transport
+- Resource system exposing all vault files to AI clients
+- Structured note schema with metadata and categories
+- `list_notes` tool implementation
+- Vault directory structure and setup utility
+- Comprehensive logging and error handling
+
+### 🚧 In Progress
+- `create_note` tool implementation (schema complete, handler in development)
+
+### 📋 Planned
+- Complete CRUD operations: `read_note`, `update_note`, `delete_note`
+- Search and query tools for note discovery
+- Note relationship and connection mapping
+- Enhanced metadata extraction and categorization
+- Template system for different note types
+- Integration with game progress tracking
 
 ## Contributing
 
