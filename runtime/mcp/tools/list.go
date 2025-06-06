@@ -25,8 +25,8 @@ func listNotesTool() mcp.Tool {
 	}
 }
 
-// ListNotesHandler creates a handler for listing notes, with access to the application config.
-func ListNotesHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+// listNotesHandler creates a handler for listing notes, with access to the application config.
+func listNotesHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		notesDir := filepath.Join(cfg.ObsidianVaultPath, vault.NOTES_DIR)

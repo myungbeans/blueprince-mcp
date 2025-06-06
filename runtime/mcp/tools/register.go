@@ -9,7 +9,7 @@ import (
 )
 
 func Register(ctx context.Context, s *server.MCPServer, cfg *config.Config) {
-	s.AddTool(listNotesTool(), ListNotesHandler(ctx, cfg))
+	s.AddTool(listNotesTool(), listNotesHandler(ctx, cfg))
 	s.AddTool(createNoteTool(), createNoteHandler(ctx, cfg))
 	s.AddTool(readNoteTool(), readNoteHandler(ctx, cfg))
 	s.AddTool(updateNoteTool(), updateNoteHandler(ctx, cfg))
