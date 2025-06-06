@@ -8,7 +8,7 @@ This MCP server exposes tools and resources for managing local notes (stored as 
 
 **⚠️ IMPORTANT: SPOILER-FREE USAGE**
 
-This MCP server is designed to preserve your Blue Prince gameplay experience. When using with an MCP client (e.g. Claude Desktop):
+This MCP server is designed to preserve your Blue Prince gameplay experience. When used with an MCP client (e.g. Claude Desktop):
 - The Client will ONLY use information from your notes
 - The Client cannot and will not reference external Blue Prince information  
 - Spoiler prevention rules are automatically provided as an MCP resource
