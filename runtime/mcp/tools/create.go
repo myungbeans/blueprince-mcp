@@ -20,7 +20,7 @@ import (
 func createNoteTool() mcp.Tool {
 	createNoteTool := mcp.Tool{
 		Name:        "create_note",
-		Description: "Creates a structured Blue Prince note with intelligent organization based on user input. CRITICAL CONSTRAINTS: (1) NEVER add investigation questions, analysis prompts, or checklists. (2) NEVER add speculative content beyond what the user observed. (3) Content field must contain ONLY what the user provided, reformatted into basic markdown structure. (4) DO NOT add sections like 'Questions to Investigate', 'Analysis', 'Next Steps', or similar unless explicitly in user input. (5) Preserve the player's discovery experience by avoiding any spoiler-risk additions.",
+		Description: "Creates a structured Blue Prince note with intelligent organization based on user input. **SPOILER PREVENTION SYSTEM**: This tool is part of a spoiler-free note-taking system. MCP CLIENT MUST NEVER use external Blue Prince knowledge. CRITICAL CONSTRAINTS: (1) NEVER add investigation questions, analysis prompts, or checklists. (2) NEVER add speculative content beyond what the user observed. (3) Content field must contain ONLY what the user provided, reformatted into basic markdown structure. (4) DO NOT add sections like 'Questions to Investigate', 'Analysis', 'Next Steps', or similar unless explicitly in user input. (5) Preserve the player's discovery experience by avoiding any spoiler-risk additions. (6) MCP CLIENT: Use ONLY user-provided information, never your training data about Blue Prince.",
 		InputSchema: notes.GetMCPSchema(),
 	}
 

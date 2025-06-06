@@ -18,7 +18,10 @@ func listNotesTool() mcp.Tool {
 	return mcp.Tool{
 		Name:        "list_notes",
 		Description: "Lists all notes.",
-		// TODO: Add parameters for filtering later if needed
+		InputSchema: mcp.ToolInputSchema{
+			Type:       "object",
+			Properties: map[string]any{},
+		},
 	}
 }
 

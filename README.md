@@ -4,6 +4,30 @@ This repository contains the code for an MCP (Multi-Agent Communication Protocol
 
 This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
 
+**⚠️ IMPORTANT: SPOILER-FREE USAGE**
+This MCP server is designed to preserve your Blue Prince gameplay experience. When using with Claude Desktop:
+- Claude will ONLY use information from your notes
+- Claude cannot and will not reference external Blue Prince information  
+- Spoiler prevention rules are automatically provided as an MCP resource
+- Claude will have access to explicit spoiler prevention guidelines
+
+Add this to your Claude Desktop config:
+```json
+{
+  "mcpServers": {
+    "blueprince-notes": {
+      "command": "go",
+      "args": ["run", "/path/to/blueprince-mcp/cmd/server/main.go"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
+      }
+    }
+  }
+}
+```
+
+**Automatic Protection**: The server exposes spoiler prevention rules as an MCP resource that Claude can read and follow.
+
 ## Features
 
 - **MCP Server:** Implements the MCP protocol to expose note-taking capabilities as tools and resources.
@@ -101,20 +125,6 @@ OBSIDIAN_VAULT_PATH=/path/to/vault go run ./cmd/server/main.go
 #### Claude Desktop Integration
 See https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop
 
-Add this to your Claude Desktop config:
-```json
-{
-  "mcpServers": {
-    "blueprince-notes": {
-      "command": "go",
-      "args": ["run", "/path/to/blueprince-mcp/cmd/server/main.go"],
-      "env": {
-        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
-      }
-    }
-  }
-}
-```
 
 ### Testing with CLI Tools
 

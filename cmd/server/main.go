@@ -42,21 +42,18 @@ func main() {
 		cfg, err = config.LoadConfig(defaultConfigFilePath)
 		if err != nil {
 			logger.Fatal("Failed to load configuration", zap.Error(err))
-			os.Exit(1)
 		}
 	}
 
 	// Create a new MCP server
 	s := server.NewMCPServer(
-		"Blue Prince Architect Notes",
+		"Blue Prince Architect Notes - SPOILER-FREE Note Taking",
 		server_version,
-		server.WithToolCapabilities(false),
 	)
 
 	// Register Resources
 	if err := resources.Register(ctx, s, cfg.ObsidianVaultPath); err != nil {
 		logger.Fatal("Failed to register file resources", zap.Error(err))
-		os.Exit(1)
 	}
 
 	// Register Tools
