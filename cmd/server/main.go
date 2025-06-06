@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	server_version        = "0.0.0"
+	server_version        = "0.0.1"
 	defaultConfigFilePath = "cmd/config/local/config.yaml"
 	envVaultPath          = "OBSIDIAN_VAULT_PATH"
 	loggerKey             = "logger"

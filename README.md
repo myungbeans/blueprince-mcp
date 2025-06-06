@@ -168,10 +168,6 @@ See [`cmd/tools/README.md`](cmd/tools/README.md) for detailed CLI documentation 
 
 ```
 blueprince-mcp/
-├── cmd/
-│   ├── server/main.go          # Main MCP server application
-│   ├── setup/main.go           # Vault initialization utility
-│   └── config/                 # Configuration management
 ├── runtime/
 │   ├── mcp/
 │   │   ├── tools/              # MCP tool implementations
@@ -187,16 +183,16 @@ blueprince-mcp/
 │   │   └── vault/              # Vault constants and structure
 │   └── utils/                  # Common utilities (logging, file ops)
 ├── cmd/
-│   ├── tools/                  # CLI testing tools
-│   │   ├── main.go            # CLI root command
-│   │   ├── client.go          # MCP client implementation
-│   │   ├── list.go            # List command
-│   │   ├── read.go            # Read command  
-│   │   ├── create.go          # Create command
-│   │   ├── update.go          # Update command
-│   │   └── README.md          # CLI documentation
 │   ├── server/main.go          # Main MCP server application
 │   ├── setup/main.go           # Vault initialization utility
+│   ├── tools/                  # CLI testing tools
+│   │   ├── main.go             # CLI root command
+│   │   ├── client.go           # MCP client implementation
+│   │   ├── list.go             # List command
+│   │   ├── read.go             # Read command  
+│   │   ├── create.go           # Create command
+│   │   ├── update.go           # Update command
+│   │   └── README.md           # CLI documentation
 │   └── config/                 # Configuration management
 └── bin/                        # Built binaries
 ```
