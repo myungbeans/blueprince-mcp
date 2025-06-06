@@ -14,6 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
+func listNotesTool() mcp.Tool {
+	return mcp.Tool{
+		Name:        "list_notes",
+		Description: "Lists all notes.",
+		// TODO: Add parameters for filtering later if needed
+	}
+}
+
 // ListNotesHandler creates a handler for listing notes, with access to the application config.
 func ListNotesHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
