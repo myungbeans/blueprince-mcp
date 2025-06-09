@@ -1,2 +1,4 @@
 title: Blue Prince MCP
 description: Documentation for Blue Prince MCP
+plugins:
+  - jekyll-optional-front-matter
