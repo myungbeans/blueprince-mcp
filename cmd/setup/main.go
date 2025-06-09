@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/myungbeans/blueprince-mcp/cmd/setup/drive"
 	"github.com/myungbeans/blueprince-mcp/runtime/models/notes"
 	"github.com/myungbeans/blueprince-mcp/runtime/models/vault"
 	"github.com/myungbeans/blueprince-mcp/runtime/utils"
@@ -125,6 +126,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer logger.Sync() // Flushes buffer, if any
+
+	// Add subcommands
+	rootCmd.AddCommand(drive.DriveCmd)
 
 	// Kick off here!
 	if err := rootCmd.Execute(); err != nil {

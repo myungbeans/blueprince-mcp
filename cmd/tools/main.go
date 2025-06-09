@@ -31,6 +31,7 @@ and list operations on your notes.`,
 	rootCmd.AddCommand(newCreateCmd())
 	rootCmd.AddCommand(newReadCmd())
 	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newDeleteCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
