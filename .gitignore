@@ -9,3 +9,6 @@
 
 # Go workspace file
 go.work
+
+# Vendor
+vendor/
