@@ -1,66 +1,247 @@
-# Privacy Policy
-
-**Blue Prince MCP**  
-*Effective Date: June 9, 2025*
-
-## Overview
-
-Blue Prince MCP is a command-line interface (CLI) tool designed to integrate with your local Obsidian vault and Google Drive. We are committed to protecting your privacy and being transparent about how your data is handled.
-
-## Data Collection and Storage
-
-### Authentication Tokens
-- **Local Storage Only**: All authentication tokens (including Google Drive OAuth tokens) are stored locally on your machine in the `~/.blueprince_mcp/` directory
-- **No Third-Party Transmission**: Authentication credentials are never transmitted to, stored on, or accessible by any third-party servers
-- **Secure Storage**: Tokens are stored with restricted file permissions (600) accessible only to your user account
-
-### File Data
-- **Direct Transfer**: File data is transferred directly between Google Drive and your local disk
-- **No Intermediary Servers**: No file content passes through any third-party servers or services
-- **Local Processing**: All file operations are performed locally on your machine
-
-## Data Usage
-
-### What We Do
-- Store authentication tokens locally for seamless access to your Google Drive
-- Facilitate direct file synchronization between Google Drive and your local Obsidian vault
-- Process files locally for organization and management within your vault structure
-
-### What We Don't Do
-- **No Data Collection**: We do not collect, store, or analyze your personal data
-- **No Tracking**: We do not track your usage patterns or file access
-- **No Third-Party Sharing**: We do not share any data with third parties
-- **No Cloud Storage**: We do not store your files or data on any remote servers
-
-## Google Drive Integration
-
-When you authenticate with Google Drive:
-- You grant permission directly to the application running on your local machine
-- All communication with Google Drive occurs directly from your device
-- We only request the minimum necessary permissions to provide the intended functionality
-- You can revoke access at any time through your Google Account settings
-
-## Data Security
-
-- Authentication tokens are stored with secure file permissions on your local system
-- All data transfer occurs over encrypted connections (HTTPS)
-- No data is transmitted to or stored on external servers operated by Blue Prince MCP
-
-## Your Rights and Control
-
-- **Full Control**: You maintain complete control over your data and files
-- **Local Storage**: All configuration and authentication data remains on your device
-- **Easy Removal**: You can delete all stored data by removing the `~/.blueprince_mcp/` directory
-- **Revoke Access**: You can revoke Google Drive permissions through your Google Account at any time
-
-## Contact
-
-This is an open-source project. For questions about privacy or data handling, please refer to the project documentation or submit an issue on the project repository.
-
-## Changes to This Policy
-
-Any updates to this privacy policy will be reflected in the project documentation. Continued use of the application after policy updates constitutes acceptance of the revised terms.
-
+---
+title: Home
+layout: default
 ---
 
-*This privacy policy reflects our commitment to keeping your data private and secure while providing useful functionality for managing your Obsidian vault and Google Drive integration.*
+
+# Blue Prince MCP - Architect Notes
+
+![Blue Prince MCP Architect Notes logo](static/blue_prince_mcp_logo.png)
+
+This repository contains the code for an MCP (Multi-Agent Communication Protocol) server designed to act as a dedicated note-taking and brainstorming assistant for playing the game [Blue Prince](https://store.steampowered.com/app/1569580/Blue_Prince/).
+
+This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
+
+**⚠️ IMPORTANT: SPOILER-FREE USAGE**
+
+This MCP server is designed to preserve your Blue Prince gameplay experience. When used with an MCP client (e.g. Claude Desktop):
+- The Client will ONLY use information from your notes
+- The Client cannot and will not reference external Blue Prince information  
+- Spoiler prevention rules are automatically provided as an MCP resource
+- The Client will have access to explicit spoiler prevention guidelines
+
+## Features
+
+- **MCP Server:** Implements the MCP protocol to expose note-taking capabilities as tools and resources.
+- **Local Vault Storage:** Stores notes as markdown files in a structured local directory (compatible with Obsidian).
+- **Structured Notes:** Organizes notes in predefined categories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) with intelligent metadata extraction.
+- **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients (excludes `.obsidian/` directories).
+- **Spoiler Prevention System:** Multi-layered protection including:
+  - Built-in content validation to prevent investigation prompts
+  - Spoiler prevention rules automatically exposed as an MCP resource
+  - Client-side enforcement through tool descriptions and server metadata
+  - Server-side validation of all content creation
+- **Complete CRUD Operations:** 
+  - ✅ `list_notes` - Lists all notes in the vault
+  - ✅ `create_note` - Creates structured notes with intelligent categorization and spoiler prevention
+  - ✅ `read_note` - Reads complete note content including metadata
+  - ✅ `update_note` - Updates existing notes with new content
+  - 📋 `delete_note` - Planned for future implementation
+- **CLI Testing Tools:** Comprehensive command-line interface for manual testing and debugging.
+- **Setup Utility:** Go program to initialize vault directory structure and configuration.
+- **Flexible Configuration:** Supports both file-based config and environment variable overrides.
+- **Structured Logging:** Uses `go.uber.org/zap` for comprehensive logging and debugging.
+
+## Usage Guide
+```
+"Write a new note. I'm in the corridor. There is a painting of a tiger and a cupcake stand? Three windows. Two benches and hats."
+```
+
+The MCP Client will then intelligently format the note and tag it appropraitely.
+
+In the future you can ask
+```
+"Where have I seen windows before? Can you list all rooms that have windows in them?"
+```
+
+The MCP Client will then scan all of your notes (and only your notes) to look for what _you_ know to be all rooms that have windows in them.
+
+## Getting Started
+
+### Prerequisites
+
+- Go (version 1.20 or higher recommended)
+- An MCP client (e.g., a compatible AI agent or a testing tool)
+- Git
+
+### Setup
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/myungbeans/blueprince-mcp.git
+    cd blueprince-mcp
+    ```
+
+2.  **Run the setup utility:**
+    This program will create the necessary Obsidian vault directory structure and update your `config.yaml` file with the vault's path.
+
+    By default, it will create the vault at `~/Documents/blueprince_mcp/`.
+
+    ```bash
+    go run ./cmd/setup
+    ```
+
+    Alternatively, you can specify a custom path for your vault:
+
+    ```bash
+    go run ./cmd/setup /path/to/your/custom/vault
+    ```
+
+    The setup utility will ensure the required subdirectories (`notes/people`, `notes/puzzles`, `notes/rooms`, `notes/items`, `notes/lore`, `notes/general`) exist within the vault, along with `meta/` and `screenshots/` directories.
+
+3.  **Review `config.yaml`:**
+    The setup utility updates `config.yaml` with the `obsidian_vault_path`. You can review this file and adjust other settings like `server.host` or `server.port` if needed.
+
+    ```yaml
+    # Example config.yaml
+    server:
+      host: "localhost"
+      port: 8001
+
+    obsidian_vault_path: "/Users/michael.myung/Documents/blueprince_mcp" # This will be set by the setup script
+    backup_dir_name: ".obsidian_backup" # Directory name for potential future backups within the vault
+    ```
+
+## Build & Usage
+
+### Building the Server
+```bash
+go build -o ./bin/blueprince-mcp-server ./cmd/server/main.go
+```
+
+### Building the CLI Tools
+```bash
+go build -o ./bin/blueprince-tools ./cmd/tools/
+```
+
+### Running the Server
+
+#### Local Development
+Make sure you are in the project root directory.
+
+```bash
+go run ./cmd/server/main.go
+```
+
+The server will start and listen for MCP connections via stdio transport.
+
+#### Environment Configuration
+You can override the vault path using an environment variable:
+
+```bash
+OBSIDIAN_VAULT_PATH=/path/to/vault go run ./cmd/server/main.go
+```
+
+#### Claude Desktop Integration
+See the [Claude Desktop instructions for adding custom MCP servers](https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop)
+
+Tl;dr 
+Add this to your Claude Desktop config:
+```json
+{
+  "mcpServers": {
+    "blueprince-notes": {
+      "command": "/path/to/blueprince-mcp/bin/blueprince-mcp-server",
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
+      }
+    }
+  }
+}
+```
+**make sure to update your /path/to's**
+
+### Testing with CLI Tools
+
+The project includes a comprehensive CLI for manual testing:
+
+```bash
+# List all notes
+./bin/blueprince-tools list
+
+# Create a new note
+./bin/blueprince-tools create people/character.md \
+  --title "Character Name" \
+  --content "Character description"
+
+# Read a note
+./bin/blueprince-tools read people/character.md
+
+# Update a note
+./bin/blueprince-tools update people/character.md \
+  --content "Updated character information"
+
+# Use verbose mode for debugging
+./bin/blueprince-tools list --verbose
+```
+
+See [`cmd/tools/README.md`](cmd/tools/README.md) for detailed CLI documentation and examples.
+
+## Project Structure
+
+```
+blueprince-mcp/
+├── runtime/
+│   ├── mcp/
+│   │   ├── tools/              # MCP tool implementations
+│   │   │   ├── list.go         # ✅ List notes tool
+│   │   │   ├── create.go       # ✅ Create note tool
+│   │   │   ├── read.go         # ✅ Read note tool
+│   │   │   ├── update.go       # ✅ Update note tool
+│   │   │   ├── delete.go       # ✅ Delete note tool
+│   │   │   └── register.go     # Tool registration
+│   │   └── resources/          # MCP resource system
+│   ├── models/
+│   │   ├── notes/              # Note structure and schemas
+│   │   └── vault/              # Vault constants and structure
+│   └── utils/                  # Common utilities (logging, file ops)
+├── cmd/
+│   ├── server/main.go          # Main MCP server application
+│   ├── setup/main.go           # Vault initialization utility
+│   ├── tools/                  # CLI testing tools
+│   │   ├── main.go             # CLI root command
+│   │   ├── client.go           # MCP client implementation
+│   │   ├── list.go             # List command
+│   │   ├── read.go             # Read command  
+│   │   ├── create.go           # Create command
+│   │   ├── update.go           # Update command
+│   │   └── README.md           # CLI documentation
+│   └── config/                 # Configuration management
+└── bin/                        # Built binaries
+```
+
+## Current Status & Roadmap
+
+### ✅ Completed
+- MCP server framework with stdio transport
+- Resource system exposing all vault files to AI clients  
+- Structured note schema with metadata and categories
+- Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`, `delete_note`
+- Vault directory structure and setup utility
+- Comprehensive logging and error handling
+- Multi-layered spoiler prevention system:
+  - Server-side content validation and spoiler detection
+  - Spoiler prevention rules exposed as MCP resource
+  - Client-side enforcement through tool descriptions
+  - Automatic rule delivery to MCP clients
+- Path security and traversal prevention
+- .obsidian directory filtering for clean vault management
+- Utility function abstraction to eliminate code duplication
+- Complete CLI testing tools with Cobra framework
+- Subprocess communication for reliable MCP testing
+- Robust configuration system with environment variable support
+
+### 📋 Planned
+- Integration with screenshots
+  - Intelligently interpret screenshots to create notes with tags and descriptions of images
+  - Embed notes with smart links to related images
+  - Serve images back to MCP Client
+  - Integrate with Google Drive to sync screenshots from Steam Deck -> Drive -> local
+
+## Contributing
+
+Contributions are welcome! Please feel free to open issues or submit pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

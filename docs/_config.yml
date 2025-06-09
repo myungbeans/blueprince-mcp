@@ -1,4 +1,15 @@
 title: Blue Prince MCP
-description: Documentation for Blue Prince MCP
+description: Blue Prince Note-Taking System for Mystery Games
+baseurl: "/blueprince-mcp"
+url: "https://myungbeans.github.io"
+
+# Navigation
+header_pages:
+  - index.md
+  - privacy-policy.md
+
 plugins:
   - jekyll-optional-front-matter
+
+# Use a clean theme
+theme: minima
