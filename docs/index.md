@@ -89,7 +89,26 @@ The MCP Client will then scan all of your notes (and only your notes) to look fo
 
     The setup utility will ensure the required subdirectories (`notes/people`, `notes/puzzles`, `notes/rooms`, `notes/items`, `notes/lore`, `notes/general`) exist within the vault, along with `meta/` and `screenshots/` directories.
 
-3.  **Review `config.yaml`:**
+3.  **Configure Google Drive Integration (Optional):**
+    To enable automatic screenshot syncing from Google Drive, run the drive setup command:
+
+    ```bash
+    go run ./cmd/setup drive "YourFolderName"
+    ```
+
+    This will:
+    - Open your browser for Google Drive OAuth authentication
+    - Create or access the specified folder in your Google Drive
+    - Configure permissions for viewing, editing, creating, and downloading files
+    - Save authentication tokens locally for future use
+
+    **Requirements:**
+    - The folder name must be specified (cannot be root directory)
+    - Google Drive permissions include: view, list, edit, create directories, download files
+    - All authentication data is stored locally on your machine
+    - See our [Privacy Policy](privacy-policy.html) for details on data handling
+
+4.  **Review `config.yaml`:**
     The setup utility updates `config.yaml` with the `obsidian_vault_path`. You can review this file and adjust other settings like `server.host` or `server.port` if needed.
 
     ```yaml
@@ -197,7 +216,13 @@ blueprince-mcp/
 │   └── utils/                  # Common utilities (logging, file ops)
 ├── cmd/
 │   ├── server/main.go          # Main MCP server application
-│   ├── setup/main.go           # Vault initialization utility
+│   ├── setup/                  # Setup utilities
+│   │   ├── main.go             # Vault initialization utility
+│   │   └── drive/              # Google Drive integration setup
+│   │       ├── drive.go        # Drive command implementation
+│   │       └── auth/           # OAuth authentication
+│   │           ├── auth.go     # Google Drive OAuth flow
+│   │           └── .credentials.json # OAuth credentials
 │   ├── tools/                  # CLI testing tools
 │   │   ├── main.go             # CLI root command
 │   │   ├── client.go           # MCP client implementation
@@ -207,6 +232,9 @@ blueprince-mcp/
 │   │   ├── update.go           # Update command
 │   │   └── README.md           # CLI documentation
 │   └── config/                 # Configuration management
+├── docs/                       # Documentation
+│   ├── privacy-policy.md       # Privacy policy for Google Drive integration
+│   └── index.md                # Documentation homepage
 └── bin/                        # Built binaries
 ```
 
@@ -218,6 +246,12 @@ blueprince-mcp/
 - Structured note schema with metadata and categories
 - Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`, `delete_note`
 - Vault directory structure and setup utility
+- **Google Drive Integration:**
+  - OAuth2 authentication flow with automatic browser opening
+  - Full Google Drive API permissions (view, list, edit, create, download)
+  - Secure local token storage in `~/.blueprince_mcp/`
+  - Automated folder creation and access verification
+  - Privacy-focused design with no third-party data transmission
 - Comprehensive logging and error handling
 - Multi-layered spoiler prevention system:
   - Server-side content validation and spoiler detection
@@ -230,13 +264,20 @@ blueprince-mcp/
 - Complete CLI testing tools with Cobra framework
 - Subprocess communication for reliable MCP testing
 - Robust configuration system with environment variable support
+- **Documentation & Privacy:**
+  - Comprehensive privacy policy for Google Drive integration
+  - Updated setup instructions and project structure documentation
 
 ### 📋 Planned
-- Integration with screenshots
+- **Enhanced Screenshot Integration:**
   - Intelligently interpret screenshots to create notes with tags and descriptions of images
   - Embed notes with smart links to related images
   - Serve images back to MCP Client
-  - Integrate with Google Drive to sync screenshots from Steam Deck -> Drive -> local
+  - ✅ **Google Drive sync foundation complete** - ready for screenshot synchronization from Steam Deck -> Google Drive -> local vault
+- **File Synchronization:**
+  - Automatic download and sync of files from configured Google Drive folder
+  - Background sync process for seamless screenshot integration
+  - Smart conflict resolution for file updates
 
 ## Contributing
 
