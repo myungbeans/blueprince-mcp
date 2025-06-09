@@ -2,7 +2,7 @@
 
 ![Blue Prince MCP Architect Notes logo](static/blue_prince_mcp_logo.png)
 
-This repository contains the code for an MCP (Multi-Agent Communication Protocol) server designed to act as a dedicated note-taking and brainstorming assistant for playing the game [Blue Prince](https://store.steampowered.com/app/1569580/Blue_Prince/).
+This repository contains the code for an MCP (Model Context Protocol) server designed to act as a dedicated note-taking and brainstorming assistant for playing the game [Blue Prince](https://store.steampowered.com/app/1569580/Blue_Prince/).
 
 This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
 
