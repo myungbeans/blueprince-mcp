@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/myungbeans/blueprince-mcp/cmd/config"
 	"github.com/myungbeans/blueprince-mcp/cmd/setup/drive/auth"
 	"github.com/spf13/cobra"
 )
@@ -18,6 +19,11 @@ This command configures OAuth authentication and sets permissions for:
 - Edit files & directories (rename, move)
 - Create directories
 - Download files
+
+Upon successful authentication, this command will:
+- Save OAuth tokens locally for future use
+- Update config.yaml with the google_drive_screenshot_folder setting
+- Update claude_desktop/config.json with the GOOGLE_DRIVE_SCREENSHOT_FOLDER environment variable
 
 You must specify a folder name to use as the root Google Drive folder for the integration.
 The folder cannot be the root of your Google Drive - it must be a specific folder.`,
@@ -54,6 +60,32 @@ The folder cannot be the root of your Google Drive - it must be a specific folde
 			return fmt.Errorf("failed to save Google Drive configuration: %w", err)
 		}
 
+		// Update config files with the folder name
+		if err := updateConfigFiles(targetFolder); err != nil {
+			return fmt.Errorf("failed to update configuration files: %w", err)
+		}
+
+		fmt.Printf("✅ Google Drive setup completed successfully!\n")
+		fmt.Printf("📁 Configured folder: %s\n", targetFolder)
+		fmt.Printf("📝 Updated configuration files with folder settings\n")
+
 		return nil
 	},
+}
+
+// updateConfigFiles updates both config.yaml and claude_desktop/config.json with the Google Drive folder
+func updateConfigFiles(folderName string) error {
+	// Update config.yaml
+	if err := config.UpdateYamlField(config.YamlConfigFile, config.GoogleDriveScreenshotFolderField, folderName); err != nil {
+		return fmt.Errorf("failed to update YAML config: %w", err)
+	}
+	fmt.Printf("📝 Updated %s with folder: %s\n", config.YamlConfigFile, folderName)
+
+	// Update claude_desktop/config.json
+	if err := config.UpdateClaudeDesktopEnvVar(config.JsonConfigFile, config.GoogleDriveScreenshotFolderEnv, folderName); err != nil {
+		return fmt.Errorf("failed to update Claude Desktop config: %w", err)
+	}
+	fmt.Printf("📝 Updated %s with folder: %s\n", config.JsonConfigFile, folderName)
+
+	return nil
 }
