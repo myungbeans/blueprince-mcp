@@ -226,7 +226,6 @@ blueprince-mcp/
 │   │       ├── drive.go        # Drive command implementation
 │   │       └── auth/           # OAuth authentication
 │   │           ├── auth.go     # Google Drive OAuth flow
-│   │           └── .credentials.json # OAuth credentials
 │   ├── tools/                  # CLI testing tools
 │   │   ├── main.go             # CLI root command
 │   │   ├── client.go           # MCP client implementation

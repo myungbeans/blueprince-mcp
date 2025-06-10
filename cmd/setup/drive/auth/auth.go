@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
+	gdrive "github.com/myungbeans/blueprince-mcp/runtime/storage/drive"
+
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
@@ -24,38 +24,26 @@ type GoogleDriveAuth struct {
 	ctx        context.Context
 }
 
-type DriveConfig struct {
-	FolderID   string `json:"folder_id"`
-	FolderName string `json:"folder_name"`
-	TokenPath  string `json:"token_path"`
-}
-
-func NewGoogleDriveAuth(credentialsPath string) (*GoogleDriveAuth, error) {
-	ctx := context.Background()
-
-	// Read credentials file
-	b, err := os.ReadFile(credentialsPath)
+func NewGoogleDriveAuth(ctx context.Context) (*GoogleDriveAuth, error) {
+	// Load credentials using shared utility
+	config, err := gdrive.LoadCredentials()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read client secret file: %v", err)
-	}
-
-	// Parse credentials and create config
-	config, err := google.ConfigFromJSON(b, drive.DriveScope)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse client secret file to config: %v", err)
+		return nil, fmt.Errorf("unable to load credentials: %v", err)
 	}
 
 	// Set up token and config file paths
-	homeDir, err := os.UserHomeDir()
+	tokenFile, err := gdrive.TokenPath()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get user home directory: %v", err)
+		return nil, fmt.Errorf("unable to get token path: %v", err)
 	}
 
-	tokenFile := filepath.Join(homeDir, ".blueprince_mcp", "drive_token.json")
-	configFile := filepath.Join(homeDir, ".blueprince_mcp", "drive_config.json")
+	configFile, err := gdrive.ConfigPath()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get config path: %v", err)
+	}
 
 	// Ensure config directory exists
-	if err := os.MkdirAll(filepath.Dir(tokenFile), 0700); err != nil {
+	if err := gdrive.EnsureConfigDir(); err != nil {
 		return nil, fmt.Errorf("unable to create config directory: %v", err)
 	}
 
@@ -69,7 +57,7 @@ func NewGoogleDriveAuth(credentialsPath string) (*GoogleDriveAuth, error) {
 
 func (g *GoogleDriveAuth) Authenticate() error {
 	// Try to load existing token
-	token, err := g.loadToken()
+	token, err := gdrive.LoadToken()
 	if err != nil {
 		// No existing token, start OAuth flow
 		token, err = g.getTokenFromWeb()
@@ -78,7 +66,7 @@ func (g *GoogleDriveAuth) Authenticate() error {
 		}
 
 		// Save token for future use
-		if err := g.saveToken(token); err != nil {
+		if err := gdrive.SaveToken(g.tokenFile, token); err != nil {
 			return fmt.Errorf("unable to save token: %v", err)
 		}
 	}
@@ -106,13 +94,14 @@ func (g *GoogleDriveAuth) TestPermissions(folderName string) error {
 	}
 
 	// Find or create the specified folder
-	folderID, err := g.findOrCreateFolder(folderName)
+	gd := &gdrive.GoogleDrive{Client: g.service}
+	folderID, err := gd.FindOrCreateFolder(folderName)
 	if err != nil {
 		return fmt.Errorf("unable to access folder '%s': %v", folderName, err)
 	}
 
 	// Test permissions by trying to list contents of the folder
-	_, err = g.service.Files.List().Q(fmt.Sprintf("'%s' in parents", folderID)).PageSize(1).Do()
+	_, err = gd.ListFolderContents(folderID, 1)
 	if err != nil {
 		return fmt.Errorf("unable to list contents of folder '%s': %v", folderName, err)
 	}
@@ -122,13 +111,16 @@ func (g *GoogleDriveAuth) TestPermissions(folderName string) error {
 }
 
 func (g *GoogleDriveAuth) SaveConfig(folderName string) error {
+	// Create GoogleDrive instance to use its methods
+	gd := &gdrive.GoogleDrive{Client: g.service}
+
 	// Find folder ID
-	folderID, err := g.findOrCreateFolder(folderName)
+	folderID, err := gd.FindOrCreateFolder(folderName)
 	if err != nil {
 		return fmt.Errorf("unable to find folder '%s': %v", folderName, err)
 	}
 
-	config := DriveConfig{
+	config := gdrive.DriveConfig{
 		FolderID:   folderID,
 		FolderName: folderName,
 		TokenPath:  g.tokenFile,
@@ -145,34 +137,6 @@ func (g *GoogleDriveAuth) SaveConfig(folderName string) error {
 
 	fmt.Printf(" Configuration saved to: %s\n", g.configFile)
 	return nil
-}
-
-func (g *GoogleDriveAuth) findOrCreateFolder(folderName string) (string, error) {
-	// Search for existing folder
-	query := fmt.Sprintf("name='%s' and mimeType='application/vnd.google-apps.folder' and trashed=false", folderName)
-	r, err := g.service.Files.List().Q(query).Do()
-	if err != nil {
-		return "", fmt.Errorf("unable to search for folder: %v", err)
-	}
-
-	if len(r.Files) > 0 {
-		// Folder exists
-		return r.Files[0].Id, nil
-	}
-
-	// Create new folder
-	folder := &drive.File{
-		Name:     folderName,
-		MimeType: "application/vnd.google-apps.folder",
-	}
-
-	file, err := g.service.Files.Create(folder).Do()
-	if err != nil {
-		return "", fmt.Errorf("unable to create folder: %v", err)
-	}
-
-	fmt.Printf(" Created new Google Drive folder: %s\n", folderName)
-	return file.Id, nil
 }
 
 func (g *GoogleDriveAuth) getTokenFromWeb() (*oauth2.Token, error) {
@@ -302,26 +266,4 @@ func isCommand(name string) bool {
 func runCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	return cmd.Start()
-}
-
-func (g *GoogleDriveAuth) loadToken() (*oauth2.Token, error) {
-	f, err := os.Open(g.tokenFile)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	token := &oauth2.Token{}
-	err = json.NewDecoder(f).Decode(token)
-	return token, err
-}
-
-func (g *GoogleDriveAuth) saveToken(token *oauth2.Token) error {
-	f, err := os.OpenFile(g.tokenFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return fmt.Errorf("unable to cache oauth token: %v", err)
-	}
-	defer f.Close()
-
-	return json.NewEncoder(f).Encode(token)
 }

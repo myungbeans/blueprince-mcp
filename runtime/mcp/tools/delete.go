@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// deleteNoteTool returns the configured mcp.Tool for deleting notes
-func deleteNoteTool() mcp.Tool {
+// DeleteNoteTool returns the configured mcp.Tool for deleting notes
+func DeleteNoteTool() mcp.Tool {
 	return mcp.Tool{
 		Name:        "delete_note",
 		Description: "Deletes a specific note by its path. Use this to permanently remove a note file from the vault.",
@@ -30,8 +30,8 @@ func deleteNoteTool() mcp.Tool {
 	}
 }
 
-// deleteNoteHandler creates a handler for deleting a specific note
-func deleteNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+// DeleteNoteHandler creates a handler for deleting a specific note
+func DeleteNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
 
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

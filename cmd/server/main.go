@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
-	"github.com/myungbeans/blueprince-mcp/runtime/mcp/resources"
-	"github.com/myungbeans/blueprince-mcp/runtime/mcp/tools"
+	"github.com/myungbeans/blueprince-mcp/runtime"
+	"github.com/myungbeans/blueprince-mcp/runtime/storage/drive"
 
 	"go.uber.org/zap"
 
@@ -23,7 +23,8 @@ const (
 
 func main() {
 	// Initialize logger early
-	logger, err := zap.NewDevelopment() // TODO: using NewDevelopment for more human-friendly output during dev
+	// TODO: using NewDevelopment for more human-friendly output during dev
+	logger, err := zap.NewDevelopment()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to initialize logger. Driving blind is dangerous. Abort!\nError: %v\n", err)
 		os.Exit(1)
@@ -45,19 +46,24 @@ func main() {
 		}
 	}
 
+	store, err := drive.NewStore(ctx, vaultPath)
+	if err != nil {
+		logger.Fatal("Failed to initialize store", zap.Error(err))
+	}
+
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"Blue Prince Architect Notes - SPOILER-FREE Note Taking",
 		server_version,
 	)
 
-	// Register Resources
-	if err := resources.Register(ctx, s, cfg.ObsidianVaultPath); err != nil {
-		logger.Fatal("Failed to register file resources", zap.Error(err))
+	rtime := runtime.NewHandler(cfg, store)
+	err = rtime.RegisterResources(ctx, s)
+	if err != nil {
+		logger.Fatal("Failed to register resources", zap.Error(err))
 	}
 
-	// Register Tools
-	tools.Register(ctx, s, cfg)
+	rtime.RegisterTools(ctx, s)
 
 	// Start the stdio server
 	logger.Info("Initializing server...")

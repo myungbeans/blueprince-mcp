@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// readNoteTool returns the configured mcp.Tool for reading notes
-func readNoteTool() mcp.Tool {
+// ReadNoteTool returns the configured mcp.Tool for reading notes
+func ReadNoteTool() mcp.Tool {
 	return mcp.Tool{
 		Name:        "read_note",
 		Description: "Reads the content of a specific note by its path. Use this to retrieve the full content of a note file including metadata and content.",
@@ -30,8 +30,8 @@ func readNoteTool() mcp.Tool {
 	}
 }
 
-// readNoteHandler creates a handler for reading the content of a specific note
-func readNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+// ReadNoteHandler creates a handler for reading the content of a specific note
+func ReadNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
 
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

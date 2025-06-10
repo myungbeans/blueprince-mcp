@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// updateNoteTool returns the configured mcp.Tool for updating notes
-func updateNoteTool() mcp.Tool {
+// UpdateNoteTool returns the configured mcp.Tool for updating notes
+func UpdateNoteTool() mcp.Tool {
 	return mcp.Tool{
 		Name:        "update_note",
 		Description: "Updates an existing note by completely replacing it with new content and metadata. The MCP client should handle reading the existing note, merging user input with existing content, and providing the complete updated note. CRITICAL CONSTRAINTS: (1) NEVER add investigation questions, analysis prompts, or checklists unless explicitly requested. (2) The MCP client should preserve existing user observations and intelligently merge new content. (3) Focus on enhancing existing content rather than adding speculative material.",
@@ -24,8 +24,8 @@ func updateNoteTool() mcp.Tool {
 	}
 }
 
-// updateNoteHandler creates a handler for updating existing notes
-func updateNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+// UpdateNoteHandler creates a handler for updating existing notes
+func UpdateNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
 
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

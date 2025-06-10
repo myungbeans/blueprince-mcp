@@ -2,10 +2,10 @@ package drive
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
 	"github.com/myungbeans/blueprince-mcp/cmd/setup/drive/auth"
+
 	"github.com/spf13/cobra"
 )
 
@@ -26,9 +26,14 @@ Upon successful authentication, this command will:
 - Update claude_desktop/config.json with the GOOGLE_DRIVE_SCREENSHOT_FOLDER environment variable
 
 You must specify a folder name to use as the root Google Drive folder for the integration.
-The folder cannot be the root of your Google Drive - it must be a specific folder.`,
+The folder cannot be the root of your Google Drive - it must be a specific folder.
+
+This should be run on the pre-built binary. 
+If run locally via CLI, you must download the app's .credentials.json from SecretManager first and save it locally in the root dir of this project.
+`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
 		targetFolder := args[0]
 
 		// Validate folder name
@@ -36,11 +41,8 @@ The folder cannot be the root of your Google Drive - it must be a specific folde
 			return fmt.Errorf("folder name cannot be empty or root directory")
 		}
 
-		// Get credentials path
-		credentialsPath := filepath.Join("cmd", "setup", "drive", "auth", ".credentials.json")
-
 		// Initialize OAuth flow
-		authenticator, err := auth.NewGoogleDriveAuth(credentialsPath)
+		authenticator, err := auth.NewGoogleDriveAuth(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to initialize Google Drive authentication: %w", err)
 		}
