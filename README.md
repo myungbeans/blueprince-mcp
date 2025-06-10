@@ -6,13 +6,15 @@ This repository contains the code for an MCP (Model Context Protocol) server des
 
 This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
 
-**⚠️ IMPORTANT: SPOILER-FREE USAGE**
+**⚠️ IMPORTANT: SPOILER-AWARE USAGE**
 
 This MCP server is designed to preserve your Blue Prince gameplay experience. When used with an MCP client (e.g. Claude Desktop):
-- The Client will ONLY use information from your notes
-- The Client cannot and will not reference external Blue Prince information  
-- Spoiler prevention rules are automatically provided as an MCP resource
-- The Client will have access to explicit spoiler prevention guidelines
+- **Primary Source**: The Client prioritizes information from your notes
+- **Filtered External Access**: The Client MAY use external Blue Prince knowledge, but ONLY for content you've already discovered
+- **Spoiler Protection**: External information is filtered to show only what you've documented in your notes
+- **Consent Required**: The Client will ask permission before sharing potentially spoiling external information
+- **Smart Filtering**: Automatic spoiler prevention rules are provided as an MCP resource
+- **Discovery Preservation**: Focus remains on your documented experiences and discoveries
 
 ## Features
 
@@ -20,11 +22,13 @@ This MCP server is designed to preserve your Blue Prince gameplay experience. Wh
 - **Local Vault Storage:** Stores notes as markdown files in a structured local directory (compatible with Obsidian).
 - **Structured Notes:** Organizes notes in predefined categories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) with intelligent metadata extraction.
 - **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients (excludes `.obsidian/` directories).
-- **Spoiler Prevention System:** Multi-layered protection including:
-  - Built-in content validation to prevent investigation prompts
-  - Spoiler prevention rules automatically exposed as an MCP resource
+- **Spoiler-Aware Protection System:** Smart filtering that preserves discovery while enabling helpful context:
+  - Automatic filtering of external information based on user's documented discoveries
+  - Consent-based sharing of potentially spoiling external information
+  - Built-in content validation to prevent premature investigation prompts
+  - Dynamic spoiler prevention rules automatically exposed as an MCP resource
   - Client-side enforcement through tool descriptions and server metadata
-  - Server-side validation of all content creation
+  - Server-side validation of all content creation with discovery preservation
 - **Complete CRUD Operations:** 
   - ✅ `list_notes` - Lists all notes in the vault
   - ✅ `create_note` - Creates structured notes with intelligent categorization and spoiler prevention
