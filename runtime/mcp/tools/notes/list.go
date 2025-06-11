@@ -1,4 +1,4 @@
-package tools
+package notes
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func ListNotesTool() mcp.Tool {
+func ListTool() mcp.Tool {
 	return mcp.Tool{
 		Name:        "list_notes",
 		Description: "Lists all notes.",
@@ -25,8 +25,8 @@ func ListNotesTool() mcp.Tool {
 	}
 }
 
-// ListNotesHandler creates a handler for listing notes, with access to the application config.
-func ListNotesHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+// ListHandler creates a handler for listing notes, with access to the application config.
+func ListHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		notesDir := filepath.Join(cfg.ObsidianVaultPath, vault.NOTES_DIR)

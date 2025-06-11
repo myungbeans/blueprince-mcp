@@ -6,7 +6,7 @@ import (
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
 	"github.com/myungbeans/blueprince-mcp/runtime/mcp/resources/files"
 	"github.com/myungbeans/blueprince-mcp/runtime/mcp/resources/rules"
-	"github.com/myungbeans/blueprince-mcp/runtime/mcp/tools"
+	"github.com/myungbeans/blueprince-mcp/runtime/mcp/tools/notes"
 	"github.com/myungbeans/blueprince-mcp/runtime/models/storage"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -26,11 +26,11 @@ func NewHandler(cfg *config.Config, store storage.Store) *Handler {
 
 func (h *Handler) RegisterTools(ctx context.Context, s *server.MCPServer) {
 	// Register Tools
-	s.AddTool(tools.ListNotesTool(), tools.ListNotesHandler(ctx, h.cfg))
-	s.AddTool(tools.CreateNoteTool(), tools.CreateNoteHandler(ctx, h.cfg))
-	s.AddTool(tools.ReadNoteTool(), tools.ReadNoteHandler(ctx, h.cfg))
-	s.AddTool(tools.UpdateNoteTool(), tools.UpdateNoteHandler(ctx, h.cfg))
-	s.AddTool(tools.DeleteNoteTool(), tools.DeleteNoteHandler(ctx, h.cfg))
+	s.AddTool(notes.ListTool(), notes.ListHandler(ctx, h.cfg))
+	s.AddTool(notes.CreateTool(), notes.CreateHandler(ctx, h.cfg))
+	s.AddTool(notes.ReadTool(), notes.ReadHandler(ctx, h.cfg))
+	s.AddTool(notes.UpdateTool(), notes.UpdateHandler(ctx, h.cfg))
+	s.AddTool(notes.DeleteTool(), notes.DeleteHandler(ctx, h.cfg))
 	// s.AddTool(tools.GetScreenshotsTool(h.cfg.ObsidianVaultPath), tools.ProcessScreenshotsHandler(ctx, h.cfg))
 }
 

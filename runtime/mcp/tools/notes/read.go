@@ -1,4 +1,4 @@
-package tools
+package notes
 
 import (
 	"context"
@@ -12,11 +12,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// DeleteNoteTool returns the configured mcp.Tool for deleting notes
-func DeleteNoteTool() mcp.Tool {
+// ReadTool returns the configured mcp.Tool for reading notes
+func ReadTool() mcp.Tool {
 	return mcp.Tool{
-		Name:        "delete_note",
-		Description: "Deletes a specific note by its path. Use this to permanently remove a note file from the vault.",
+		Name:        "read_note",
+		Description: "Reads the content of a specific note by its path. Use this to retrieve the full content of a note file including metadata and content.",
 		InputSchema: mcp.ToolInputSchema{
 			Type: "object",
 			Properties: map[string]any{
@@ -30,14 +30,14 @@ func DeleteNoteTool() mcp.Tool {
 	}
 }
 
-// DeleteNoteHandler creates a handler for deleting a specific note
-func DeleteNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
+// ReadHandler creates a handler for reading the content of a specific note
+func ReadHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFunc {
 	logger := utils.Logger(ctx)
 
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		params := request.GetArguments()
 		if params == nil {
-			return mcp.NewToolResultError("Missing arguments for delete_note"), nil
+			return mcp.NewToolResultError("Missing arguments for read_note"), nil
 		}
 
 		// Extract and validate path parameter
@@ -63,19 +63,17 @@ func DeleteNoteHandler(ctx context.Context, cfg *config.Config) server.ToolHandl
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
-		// Check if file exists before attempting deletion
-		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			logger.Warn("Note file not found for deletion", zap.String("path", notePath))
-			return mcp.NewToolResultError(fmt.Sprintf("Note not found: '%s'", notePath)), nil
+		// Check if file exists and read the content
+		content, err := os.ReadFile(fullPath)
+		if err != nil {
+			logger.Error("Failed to read note file", zap.String("filePath", fullPath), zap.Error(err))
+			if os.IsNotExist(err) {
+				return mcp.NewToolResultError(fmt.Sprintf("Note not found: '%s'", notePath)), nil
+			}
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to read note file '%s': %v", notePath, err)), nil
 		}
 
-		// Delete the file
-		if err := os.Remove(fullPath); err != nil {
-			logger.Error("Failed to delete note file", zap.String("filePath", fullPath), zap.Error(err))
-			return mcp.NewToolResultError(fmt.Sprintf("Failed to delete note file '%s': %v", notePath, err)), nil
-		}
-
-		logger.Info("Note deleted successfully", zap.String("path", notePath))
-		return mcp.NewToolResultText(fmt.Sprintf("Successfully deleted note: %s", notePath)), nil
+		logger.Info("Note read successfully", zap.String("path", notePath))
+		return mcp.NewToolResultText(string(content)), nil
 	}
 }
