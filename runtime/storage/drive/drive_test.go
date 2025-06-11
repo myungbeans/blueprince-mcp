@@ -45,7 +45,7 @@ func (m *mockFilesService) Create(file *drive.File) *drive.FilesCreateCall {
 }
 
 // Since we can't easily mock the Google Drive API calls directly,
-// we'll test the logic that doesn't require actual API calls
+// we'll test error handling when no client is provided
 
 func TestGoogleDrive_GetFile(t *testing.T) {
 	gd := &GoogleDrive{
@@ -57,14 +57,15 @@ func TestGoogleDrive_GetFile(t *testing.T) {
 	}
 
 	// Test that GetFile method exists and has correct signature
-	result, err := gd.GetFile("test.jpg", "screenshots")
+	// Since we don't have a real Google Drive client, this will fail
+	result, err := gd.GetFiles("test.jpg")
 
-	// Since this is a placeholder implementation, it should return nil, nil
-	if result != nil {
-		t.Errorf("GetFile() should return nil for placeholder implementation, got: %v", result)
+	// Without a proper client, this should return an error
+	if err == nil {
+		t.Error("GetFile() should return error when client is nil")
 	}
-	if err != nil {
-		t.Errorf("GetFile() should not return error for placeholder implementation, got: %v", err)
+	if result != nil {
+		t.Errorf("GetFile() should return nil when error occurs, got: %v", result)
 	}
 }
 
@@ -78,14 +79,15 @@ func TestGoogleDrive_ListFiles(t *testing.T) {
 	}
 
 	// Test that ListFiles method exists and has correct signature
-	result, err := gd.ListFiles("screenshots")
+	// Since we don't have a real Google Drive client, this will fail
+	result, err := gd.ListFiles()
 
-	// Since this is a placeholder implementation, it should return empty slice, nil
-	if len(result) != 0 {
-		t.Errorf("ListFiles() should return empty slice for placeholder implementation, got: %v", result)
+	// Without a proper client, this should return an error
+	if err == nil {
+		t.Error("ListFiles() should return error when client is nil")
 	}
-	if err != nil {
-		t.Errorf("ListFiles() should not return error for placeholder implementation, got: %v", err)
+	if result != nil {
+		t.Errorf("ListFiles() should return nil when error occurs, got: %v", result)
 	}
 }
 
@@ -99,11 +101,12 @@ func TestGoogleDrive_MoveFile(t *testing.T) {
 	}
 
 	// Test that MoveFile method exists and has correct signature
+	// Since we don't have a real Google Drive client, this will fail
 	err := gd.MoveFile("test.jpg", "new_location")
 
-	// Since this is a placeholder implementation, it should return nil
-	if err != nil {
-		t.Errorf("MoveFile() should not return error for placeholder implementation, got: %v", err)
+	// Without a proper client, this should return an error
+	if err == nil {
+		t.Error("MoveFile() should return error when client is nil")
 	}
 }
 
@@ -171,12 +174,12 @@ func TestGoogleDrive_ErrorHandling(t *testing.T) {
 	}
 
 	// Test with empty values - methods should still work since they're placeholders
-	_, err := gd.GetFile("", "")
+	_, err := gd.GetFiles("")
 	if err != nil {
 		t.Errorf("GetFile() with empty parameters should not error in placeholder, got: %v", err)
 	}
 
-	_, err = gd.ListFiles("")
+	_, err = gd.ListFiles()
 	if err != nil {
 		t.Errorf("ListFiles() with empty parameter should not error in placeholder, got: %v", err)
 	}

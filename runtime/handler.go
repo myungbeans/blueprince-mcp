@@ -7,6 +7,7 @@ import (
 	"github.com/myungbeans/blueprince-mcp/runtime/mcp/resources/files"
 	"github.com/myungbeans/blueprince-mcp/runtime/mcp/resources/rules"
 	"github.com/myungbeans/blueprince-mcp/runtime/mcp/tools/notes"
+	"github.com/myungbeans/blueprince-mcp/runtime/mcp/tools/screenshots"
 	"github.com/myungbeans/blueprince-mcp/runtime/models/storage"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -31,7 +32,8 @@ func (h *Handler) RegisterTools(ctx context.Context, s *server.MCPServer) {
 	s.AddTool(notes.ReadTool(), notes.ReadHandler(ctx, h.cfg))
 	s.AddTool(notes.UpdateTool(), notes.UpdateHandler(ctx, h.cfg))
 	s.AddTool(notes.DeleteTool(), notes.DeleteHandler(ctx, h.cfg))
-	// s.AddTool(tools.GetScreenshotsTool(h.cfg.ObsidianVaultPath), tools.ProcessScreenshotsHandler(ctx, h.cfg))
+	s.AddTool(screenshots.DownloadTool(), screenshots.DownloadHandler(ctx, h.store))
+	s.AddTool(screenshots.ListTool(), screenshots.ListHandler(ctx, h.store))
 }
 
 func (h *Handler) RegisterResources(ctx context.Context, s *server.MCPServer) error {

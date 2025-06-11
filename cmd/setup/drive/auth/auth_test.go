@@ -49,7 +49,7 @@ func TestNewGoogleDriveAuth(t *testing.T) {
 
 	// Test NewGoogleDriveAuth
 	ctx := context.Background()
-	auth, err := NewGoogleDriveAuth(ctx)
+	auth, err := NewAuthenticator(ctx)
 	if err != nil {
 		t.Fatalf("NewGoogleDriveAuth() failed: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestNewGoogleDriveAuth_MissingCredentials(t *testing.T) {
 
 	// Test NewGoogleDriveAuth with missing credentials
 	ctx := context.Background()
-	_, err = NewGoogleDriveAuth(ctx)
+	_, err = NewAuthenticator(ctx)
 	if err == nil {
 		t.Error("NewGoogleDriveAuth() should fail when credentials file is missing")
 	}
@@ -248,14 +248,14 @@ func TestGoogleDriveAuth_ErrorHandling(t *testing.T) {
 	}
 
 	// This should fail due to invalid HOME directory
-	_, err = NewGoogleDriveAuth(ctx)
+	_, err = NewAuthenticator(ctx)
 	if err == nil {
 		t.Error("NewGoogleDriveAuth() should fail with invalid HOME directory")
 	}
 }
 
 // Helper function to set up test environment
-func setupTestAuth(t *testing.T) (string, *GoogleDriveAuth) {
+func setupTestAuth(t *testing.T) (string, *Authenticator) {
 	tempDir, err := os.MkdirTemp("", "auth_test_setup")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -290,7 +290,7 @@ func setupTestAuth(t *testing.T) (string, *GoogleDriveAuth) {
 
 	// Create auth object
 	ctx := context.Background()
-	auth, err := NewGoogleDriveAuth(ctx)
+	auth, err := NewAuthenticator(ctx)
 	if err != nil {
 		t.Fatalf("Failed to create auth object: %v", err)
 	}
@@ -299,7 +299,7 @@ func setupTestAuth(t *testing.T) (string, *GoogleDriveAuth) {
 }
 
 // Benchmark tests
-func BenchmarkNewGoogleDriveAuth(b *testing.B) {
+func BenchmarkNewAuthenticator(b *testing.B) {
 	tempDir, err := os.MkdirTemp("", "auth_benchmark")
 	if err != nil {
 		b.Fatalf("Failed to create temp dir: %v", err)
@@ -334,9 +334,9 @@ func BenchmarkNewGoogleDriveAuth(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		auth, err := NewGoogleDriveAuth(ctx)
+		auth, err := NewAuthenticator(ctx)
 		if err != nil {
-			b.Fatalf("NewGoogleDriveAuth failed: %v", err)
+			b.Fatalf("NewAuthenticator failed: %v", err)
 		}
 		_ = auth
 	}

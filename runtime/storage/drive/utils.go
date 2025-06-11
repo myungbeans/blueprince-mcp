@@ -13,43 +13,55 @@ import (
 	"google.golang.org/api/drive/v3"
 )
 
-func CredsPath() (string, error) {
-	wd, err := os.Getwd()
+func CredsPath(root string) (string, error) {
+	if root != "" {
+		return filepath.Join(root, APP_CREDS_FILE), nil
+	}
+
+	root, err := os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("failed to get working directory: %w", err)
 	}
-	return filepath.Join(wd, APP_CREDS_FILE), nil
+	return filepath.Join(root, APP_CREDS_FILE), nil
 }
 
-func TokenPath() (string, error) {
+func TokenPath(secretsDir string) (string, error) {
+	path := filepath.Join(secretsDir, TOKEN_FILE)
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	return absPath, nil
+}
+
+func ConfigPath(secretsDir string) (string, error) {
+	path := filepath.Join(secretsDir, CONFIG_FILE)
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	return absPath, nil
+}
+
+func EnsureConfigDir() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("unable to get user home directory: %w", err)
 	}
-	return filepath.Join(homeDir, CONFIG_DIR, TOKEN_FILE), nil
-}
-
-func ConfigPath() (string, error) {
-	homeDir, err := os.UserHomeDir()
+	path := filepath.Join(homeDir, CONFIG_DIR)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return "", fmt.Errorf("unable to get user home directory: %w", err)
+		return "", err
 	}
-
-	return filepath.Join(homeDir, CONFIG_DIR, CONFIG_FILE), nil
+	if err := utils.EnsureDirExists(absPath, 0700); err != nil {
+		return "", err
+	}
+	return absPath, nil
 }
 
-func EnsureConfigDir() error {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("unable to get user home directory: %w", err)
-	}
-	configDir := filepath.Join(homeDir, CONFIG_DIR)
-	return utils.EnsureDirExists(configDir, 0700)
-}
-
-// loadDriveConfig loads the Google Drive Configuration file into its struct model
-func loadDriveConfig() (*DriveConfig, error) {
-	configPath, err := ConfigPath()
+// LoadDriveConfig loads the Google Drive Configuration file into its struct model
+func LoadDriveConfig(secretsDir string) (*DriveConfig, error) {
+	configPath, err := ConfigPath(secretsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +80,8 @@ func loadDriveConfig() (*DriveConfig, error) {
 }
 
 // LoadToken loads an OAuth2 token from file
-func LoadToken() (*oauth2.Token, error) {
-	tokenPath, err := TokenPath()
+func LoadToken(secretsDir string) (*oauth2.Token, error) {
+	tokenPath, err := TokenPath(secretsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +108,8 @@ func SaveToken(tokenPath string, token *oauth2.Token) error {
 }
 
 // LoadCredentials loads Google Drive credentials and creates OAuth config
-func LoadCredentials() (*oauth2.Config, error) {
-	credsPath, err := CredsPath()
+func LoadCredentials(root string) (*oauth2.Config, error) {
+	credsPath, err := CredsPath(root)
 	if err != nil {
 		return nil, err
 	}

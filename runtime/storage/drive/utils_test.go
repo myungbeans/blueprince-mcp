@@ -11,7 +11,7 @@ import (
 )
 
 func TestCredsPath(t *testing.T) {
-	path, err := CredsPath()
+	path, err := CredsPath("")
 	if err != nil {
 		t.Fatalf("CredsPath() failed: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestCredsPath(t *testing.T) {
 }
 
 func TestTokenPath(t *testing.T) {
-	path, err := TokenPath()
+	path, err := TokenPath("")
 	if err != nil {
 		t.Fatalf("TokenPath() failed: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestTokenPath(t *testing.T) {
 }
 
 func TestConfigPath(t *testing.T) {
-	path, err := ConfigPath()
+	path, err := ConfigPath("")
 	if err != nil {
 		t.Fatalf("ConfigPath() failed: %v", err)
 	}
@@ -78,15 +78,14 @@ func TestEnsureConfigDir(t *testing.T) {
 	os.Setenv("HOME", tempDir)
 	defer os.Setenv("HOME", originalHome)
 
-	err = EnsureConfigDir()
+	absPath, err := EnsureConfigDir()
 	if err != nil {
 		t.Fatalf("EnsureConfigDir() failed: %v", err)
 	}
 
 	// Check if directory was created
-	configDir := filepath.Join(tempDir, CONFIG_DIR)
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		t.Errorf("EnsureConfigDir() should create directory %s", configDir)
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		t.Errorf("EnsureConfigDir() should create directory %s", absPath)
 	}
 }
 
@@ -180,10 +179,10 @@ func TestLoadDriveConfig(t *testing.T) {
 		t.Fatalf("Failed to write config file: %v", err)
 	}
 
-	// Test loadDriveConfig
-	loadedConfig, err := loadDriveConfig()
+	// Test LoadDriveConfig
+	loadedConfig, err := LoadDriveConfig(configPath)
 	if err != nil {
-		t.Fatalf("loadDriveConfig() failed: %v", err)
+		t.Fatalf("LoadDriveConfig() failed: %v", err)
 	}
 
 	// Compare configs
@@ -214,7 +213,7 @@ func TestLoadCredentialsFileNotFound(t *testing.T) {
 	defer os.Chdir(originalWd)
 
 	// Test LoadCredentials with missing file
-	_, err = LoadCredentials()
+	_, err = LoadCredentials("")
 	if err == nil {
 		t.Error("LoadCredentials() should fail when credentials file doesn't exist")
 	}

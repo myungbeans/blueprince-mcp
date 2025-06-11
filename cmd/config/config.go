@@ -20,10 +20,14 @@ const (
 	// YAML field names
 	ObsidianVaultPathField           = "obsidian_vault_path"
 	GoogleDriveScreenshotFolderField = "google_drive_screenshot_folder"
+	GoogleDriveSecretsField          = "google_drive_secrets_dir"
+	RootField                        = "root"
 
 	// Environment variable names for Claude Desktop
 	ObsidianVaultPathEnv           = "OBSIDIAN_VAULT_PATH"
 	GoogleDriveScreenshotFolderEnv = "GOOGLE_DRIVE_SCREENSHOT_FOLDER"
+	GoogleDriveSecretsEnv          = "GOOGLE_DRIVE_SECRETS_DIR"
+	RootEnv                        = "ROOT"
 )
 
 // ServerConfig holds the server-specific configurations.
@@ -34,8 +38,11 @@ type ServerConfig struct {
 
 // Config holds all application configurations.
 type Config struct {
-	Server            ServerConfig `yaml:"server"`
-	ObsidianVaultPath string       `yaml:"obsidian_vault_path"`
+	Server             ServerConfig `yaml:"server"`
+	ObsidianVaultPath  string       `yaml:"obsidian_vault_path"`
+	GoogleDriveFolder  string       `yaml:"google_drive_screenshot_folder"`
+	GoogleDriveSecrets string       `yaml:"google_drive_secrets_dir"`
+	Root               string       `yaml:"root"`
 }
 
 // LoadConfig reads the configuration from the given YAML file path and validates it.

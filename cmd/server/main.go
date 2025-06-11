@@ -18,6 +18,9 @@ const (
 	server_version        = "0.0.1"
 	defaultConfigFilePath = "cmd/config/local/config.yaml"
 	envVaultPath          = "OBSIDIAN_VAULT_PATH"
+	envRoot               = "ROOT"
+	envGoogleDriveFolder  = "GOOGLE_DRIVE_SCREENSHOT_FOLDER"
+	envGoogleDriveSecrets = "GOOGLE_DRIVE_SECRETS_DIR"
 	loggerKey             = "logger"
 )
 
@@ -35,9 +38,12 @@ func main() {
 	var cfg *config.Config
 	vaultPath := os.Getenv(envVaultPath)
 	if vaultPath != "" {
-		logger.Info("Using Obsidian vault path from env variable", zap.String("variable", envVaultPath), zap.String("path", vaultPath))
+		logger.Info("Using env vars for configs")
 		cfg = &config.Config{
-			ObsidianVaultPath: vaultPath,
+			ObsidianVaultPath:  vaultPath,
+			Root:               os.Getenv(envRoot),
+			GoogleDriveFolder:  os.Getenv(envGoogleDriveFolder),
+			GoogleDriveSecrets: os.Getenv(envGoogleDriveSecrets),
 		}
 	} else {
 		cfg, err = config.LoadConfig(defaultConfigFilePath)
@@ -45,11 +51,20 @@ func main() {
 			logger.Fatal("Failed to load configuration", zap.Error(err))
 		}
 	}
-
-	store, err := drive.NewStore(ctx, vaultPath)
+	logger.Info("secretsPath", zap.String("path", cfg.GoogleDriveSecrets))
+	logger.Info("root", zap.String("root", cfg.Root))
+	svc, err := drive.GetSvc(ctx, cfg.GoogleDriveSecrets, cfg.Root)
 	if err != nil {
-		logger.Fatal("Failed to initialize store", zap.Error(err))
+		logger.Fatal("Failed to get Google Drive client", zap.Error(err))
 	}
+
+	// Load Google Drive configuration - this is where the user's token lives
+	driveConfig, err := drive.LoadDriveConfig(cfg.GoogleDriveSecrets)
+	if err != nil {
+		logger.Fatal("Failed to load Google Drive config", zap.Error(err))
+	}
+
+	store := drive.NewStore(ctx, svc, vaultPath, cfg.GoogleDriveSecrets, driveConfig.FolderID)
 
 	// Create a new MCP server
 	s := server.NewMCPServer(

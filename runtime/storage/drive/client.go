@@ -12,6 +12,7 @@ import (
 )
 
 type GoogleDrive struct {
+	secretsPath    string
 	VaultPath      string
 	FolderID       string
 	FolderName     string
@@ -26,52 +27,37 @@ type DriveConfig struct {
 	TokenPath  string `json:"token_path"`
 }
 
-func NewStore(ctx context.Context, vaultPath string) (*GoogleDrive, error) {
-	// Load Google Drive configuration - this is where the user's token lives
-	driveConfig, err := loadDriveConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Google Drive config: %w", err)
-	}
-
-	// Initialize Google Drive service
-	driveService, err := initDriveSvc(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize Google Drive service: %w", err)
-	}
-
+func NewStore(ctx context.Context, svc *drive.Service, vaultPath, secretsPath, folderID string) *GoogleDrive {
 	screenshotsDir := filepath.Join(vaultPath, vault.SCREENSHOT_DIR)
-
 	return &GoogleDrive{
 		VaultPath:      vaultPath,
-		FolderID:       driveConfig.FolderID,
-		FolderName:     driveConfig.FolderName,
+		secretsPath:    secretsPath,
+		FolderID:       folderID,
 		ScreenshotsDir: screenshotsDir,
-		Client:         driveService,
-	}, nil
+		Client:         svc,
+	}
 }
 
-// init initializes the Google Drive client using the token stored on the Google Drive config file
-func initDriveSvc(ctx context.Context) (*drive.Service, error) {
+func GetSvc(ctx context.Context, secretsPath, credsPath string) (*drive.Service, error) {
 	// Load the token file
-	token, err := LoadToken()
+	token, err := LoadToken(secretsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load token: %w", err)
 	}
 
 	// Load client credentials
-	config, err := LoadCredentials()
+	creds, err := LoadCredentials(credsPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load credentials: %w", err)
 	}
 
 	// Create HTTP client with token
-	client := config.Client(ctx, token)
+	client := creds.Client(ctx, token)
 
-	// Create Drive service
+	// Create Google Drive service
 	service, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Drive service: %w", err)
 	}
-
 	return service, nil
 }

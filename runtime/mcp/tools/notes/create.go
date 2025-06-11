@@ -12,6 +12,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
 	"github.com/myungbeans/blueprince-mcp/runtime/models/notes"
+	"github.com/myungbeans/blueprince-mcp/runtime/models/vault"
 	"github.com/myungbeans/blueprince-mcp/runtime/utils"
 	"go.uber.org/zap"
 )
@@ -103,13 +104,13 @@ func CreateHandler(ctx context.Context, cfg *config.Config) server.ToolHandlerFu
 			return mcp.NewToolResultError(fmt.Sprintf("Parameter validation failed: %v", err)), nil
 		}
 
-		cleanPath, err := utils.ValidateNotePath(notePath)
+		cleanPath, err := utils.ValidatePath(notePath)
 		if err != nil {
 			logger.Warn("Invalid note path", zap.String("originalPath", notePath), zap.Error(err))
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
-		fullPath, err := utils.BuildSecureNotePath(cfg.ObsidianVaultPath, cleanPath)
+		fullPath, err := utils.BuildSecurePath(cfg.ObsidianVaultPath, vault.NOTES_DIR, cleanPath)
 		if err != nil {
 			logger.Warn("Security validation failed for note path",
 				zap.String("notePath", notePath),

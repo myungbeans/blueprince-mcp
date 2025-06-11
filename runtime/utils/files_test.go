@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/myungbeans/blueprince-mcp/runtime/models/vault"
 )
 
 func TestListFiles(t *testing.T) {
@@ -193,45 +195,45 @@ func TestResolveAndCleanPath(t *testing.T) {
 	}
 }
 
-func TestValidateNotePath(t *testing.T) {
+func TestValidatePath(t *testing.T) {
 	// Test valid relative path
 	validPath := "notes/test.md"
-	result, err := ValidateNotePath(validPath)
+	result, err := ValidatePath(validPath)
 	if err != nil {
-		t.Errorf("ValidateNotePath() should succeed for valid path, got: %v", err)
+		t.Errorf("ValidatePath() should succeed for valid path, got: %v", err)
 	}
 	if result != validPath {
-		t.Errorf("ValidateNotePath() should return cleaned path, got: %s", result)
+		t.Errorf("ValidatePath() should return cleaned path, got: %s", result)
 	}
 
 	// Test empty path
-	_, err = ValidateNotePath("")
+	_, err = ValidatePath("")
 	if err == nil {
-		t.Error("ValidateNotePath() should fail for empty path")
+		t.Error("ValidatePath() should fail for empty path")
 	}
 
 	// Test path traversal attempt
 	traversalPath := "../../../etc/passwd"
-	_, err = ValidateNotePath(traversalPath)
+	_, err = ValidatePath(traversalPath)
 	if err == nil {
-		t.Error("ValidateNotePath() should fail for path traversal attempt")
+		t.Error("ValidatePath() should fail for path traversal attempt")
 	}
 
 	// Test absolute path
 	absolutePath := "/etc/passwd"
-	_, err = ValidateNotePath(absolutePath)
+	_, err = ValidatePath(absolutePath)
 	if err == nil {
-		t.Error("ValidateNotePath() should fail for absolute path")
+		t.Error("ValidatePath() should fail for absolute path")
 	}
 
 	// Test path with dot-dot in middle
 	dotDotPath := "notes/../config/file.txt"
-	result, err = ValidateNotePath(dotDotPath)
+	result, err = ValidatePath(dotDotPath)
 	if err != nil {
-		t.Errorf("ValidateNotePath() should handle dot-dot in middle: %v", err)
+		t.Errorf("ValidatePath() should handle dot-dot in middle: %v", err)
 	}
 	if strings.Contains(result, "..") {
-		t.Errorf("ValidateNotePath() should clean dot-dot, got: %s", result)
+		t.Errorf("ValidatePath() should clean dot-dot, got: %s", result)
 	}
 }
 
@@ -243,7 +245,7 @@ func TestBuildSecureNotePath(t *testing.T) {
 	}
 	defer os.RemoveAll(tempVault)
 
-	notesDir := filepath.Join(tempVault, "notes")
+	notesDir := filepath.Join(tempVault, vault.NOTES_DIR)
 	err = os.MkdirAll(notesDir, 0755)
 	if err != nil {
 		t.Fatalf("Failed to create notes directory: %v", err)
@@ -251,12 +253,12 @@ func TestBuildSecureNotePath(t *testing.T) {
 
 	// Test valid note path
 	validNotePath := "category/test.md"
-	result, err := BuildSecureNotePath(tempVault, validNotePath)
+	result, err := BuildSecurePath(tempVault, vault.NOTES_DIR, validNotePath)
 	if err != nil {
 		t.Errorf("BuildSecureNotePath() should succeed for valid path, got: %v", err)
 	}
 
-	expectedPath := filepath.Join(tempVault, "notes", validNotePath)
+	expectedPath := filepath.Join(tempVault, vault.NOTES_DIR, validNotePath)
 	if result != expectedPath {
 		t.Errorf("BuildSecureNotePath() should return correct path, got: %s, expected: %s", result, expectedPath)
 	}
@@ -270,7 +272,7 @@ func TestBuildSecureNotePath(t *testing.T) {
 func TestExtractStringParam(t *testing.T) {
 	// Test valid parameter
 	params := map[string]any{
-		"test_param": "test_value",
+		"test_param":  "test_value",
 		"other_param": 123,
 	}
 

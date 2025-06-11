@@ -91,32 +91,32 @@ func ResolveAndCleanPath(path string) (string, error) {
 	return filepath.Clean(absPath), nil
 }
 
-// ValidateNotePath validates and cleans a note path for security
+// ValidatePath validates and cleans a note path for security
 // Returns the cleaned path and any validation error
-func ValidateNotePath(notePath string) (string, error) {
-	if notePath == "" {
+func ValidatePath(filePath string) (string, error) {
+	if filePath == "" {
 		return "", fmt.Errorf("note path cannot be empty")
 	}
 
 	// Clean the path to prevent path traversal
-	cleanPath := filepath.Clean(notePath)
+	cleanPath := filepath.Clean(filePath)
 
 	// Check for path traversal attempts or absolute paths
 	if strings.HasPrefix(cleanPath, "..") || filepath.IsAbs(cleanPath) {
-		return "", fmt.Errorf("invalid note path: '%s'. Must be a relative path within the vault", notePath)
+		return "", fmt.Errorf("invalid note path: '%s'. Must be a relative path within the vault", filePath)
 	}
 
 	return cleanPath, nil
 }
 
-// BuildSecureNotePath constructs and validates a full path to a note file within the vault
+// BuildSecurePath constructs and validates a full path to a note file within the vault
 // Returns the full path and any security validation error
-func BuildSecureNotePath(vaultPath, cleanNotePath string) (string, error) {
+func BuildSecurePath(vaultPath, vaultSubDir, cleanNotePath string) (string, error) {
 	// Construct the full path to the note file
-	fullPath := filepath.Join(vaultPath, "notes", cleanNotePath)
+	fullPath := filepath.Join(vaultPath, vaultSubDir, cleanNotePath)
 
 	// Security check: Ensure the resolved path is still within the notes directory
-	absNotesPath, err := filepath.Abs(filepath.Join(vaultPath, "notes"))
+	absNotesPath, err := filepath.Abs(filepath.Join(vaultPath, vaultSubDir))
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve notes directory path: %w", err)
 	}
@@ -131,25 +131,6 @@ func BuildSecureNotePath(vaultPath, cleanNotePath string) (string, error) {
 	}
 
 	return fullPath, nil
-}
-
-// ExtractStringParam extracts and validates a string parameter from MCP arguments
-func ExtractStringParam(params map[string]any, paramName string) (string, error) {
-	if params == nil {
-		return "", fmt.Errorf("missing arguments")
-	}
-
-	paramRaw, ok := params[paramName]
-	if !ok {
-		return "", fmt.Errorf("missing required parameter: %s", paramName)
-	}
-
-	paramValue, ok := paramRaw.(string)
-	if !ok {
-		return "", fmt.Errorf("parameter '%s' must be a string", paramName)
-	}
-
-	return paramValue, nil
 }
 
 // ShouldSkipPath determines if a path should be skipped during file traversal

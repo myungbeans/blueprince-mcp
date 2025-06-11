@@ -2,9 +2,12 @@ package drive
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/myungbeans/blueprince-mcp/cmd/config"
 	"github.com/myungbeans/blueprince-mcp/cmd/setup/drive/auth"
+	"github.com/myungbeans/blueprince-mcp/runtime/storage/drive"
+	"github.com/myungbeans/blueprince-mcp/runtime/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -42,15 +45,18 @@ If run locally via CLI, you must download the app's .credentials.json from Secre
 		}
 
 		// Initialize OAuth flow
-		authenticator, err := auth.NewGoogleDriveAuth(ctx)
+		authenticator, err := auth.NewAuthenticator(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to initialize Google Drive authentication: %w", err)
 		}
-
-		// Perform OAuth flow
-		if err := authenticator.Authenticate(); err != nil {
-			return fmt.Errorf("failed to authenticate with Google Drive: %w", err)
+		// LoadToken will await from web response
+		token, err := authenticator.LoadToken()
+		if err != nil {
+			return fmt.Errorf("failed to retrieve token: %w", err)
 		}
+
+		// Use token to set up the Google Drive svc
+		authenticator.SetSvc(ctx, token)
 
 		// Test permissions and folder access
 		if err := authenticator.TestPermissions(targetFolder); err != nil {
@@ -63,8 +69,23 @@ If run locally via CLI, you must download the app's .credentials.json from Secre
 		}
 
 		// Update config files with the folder name
-		if err := updateConfigFiles(targetFolder); err != nil {
+		if err := updateScreenshotFolderConfig(targetFolder); err != nil {
 			return fmt.Errorf("failed to update configuration files: %w", err)
+		}
+		// Follow OAuth convention for the local location of secrets
+		path, err := utils.ResolveAndCleanPath(filepath.Join("~", drive.CONFIG_DIR))
+		if err != nil {
+			return fmt.Errorf("failed to determine path to secrets: %w", err)
+		}
+		if err := updateSecretsLocation(path); err != nil {
+			return fmt.Errorf("failed to update configuration files with path to secrets: %w", err)
+		}
+		pwd, err := utils.ResolveAndCleanPath(".")
+		if err != nil {
+			return fmt.Errorf("failed to determine pwd: %w", err)
+		}
+		if err := updateRoot(pwd); err != nil {
+			return fmt.Errorf("failed to update configuration files with project root: %w", err)
 		}
 
 		fmt.Printf("✅ Google Drive setup completed successfully!\n")
@@ -75,8 +96,8 @@ If run locally via CLI, you must download the app's .credentials.json from Secre
 	},
 }
 
-// updateConfigFiles updates both config.yaml and claude_desktop/config.json with the Google Drive folder
-func updateConfigFiles(folderName string) error {
+// updateScreenshotFolderConfig updates both config.yaml and claude_desktop/config.json with the Google Drive folder
+func updateScreenshotFolderConfig(folderName string) error {
 	// Update config.yaml
 	if err := config.UpdateYamlField(config.YamlConfigFile, config.GoogleDriveScreenshotFolderField, folderName); err != nil {
 		return fmt.Errorf("failed to update YAML config: %w", err)
@@ -88,6 +109,40 @@ func updateConfigFiles(folderName string) error {
 		return fmt.Errorf("failed to update Claude Desktop config: %w", err)
 	}
 	fmt.Printf("📝 Updated %s with folder: %s\n", config.JsonConfigFile, folderName)
+
+	return nil
+}
+
+// updateSecretsLocation updates both config.yaml and claude_desktop/config.json with the local location of Google Drive secrets
+func updateSecretsLocation(path string) error {
+	// Update config.yaml
+	if err := config.UpdateYamlField(config.YamlConfigFile, config.GoogleDriveSecretsField, path); err != nil {
+		return fmt.Errorf("failed to update YAML config: %w", err)
+	}
+	fmt.Printf("📝 Updated %s with path: %s\n", config.YamlConfigFile, path)
+
+	// Update claude_desktop/config.json
+	if err := config.UpdateClaudeDesktopEnvVar(config.JsonConfigFile, config.GoogleDriveSecretsEnv, path); err != nil {
+		return fmt.Errorf("failed to update Claude Desktop config: %w", err)
+	}
+	fmt.Printf("📝 Updated %s with path: %s\n", config.JsonConfigFile, path)
+
+	return nil
+}
+
+// updateRoot updates both config.yaml and claude_desktop/config.json with the local location of Google Drive secrets
+func updateRoot(path string) error {
+	// Update config.yaml
+	if err := config.UpdateYamlField(config.YamlConfigFile, config.RootField, path); err != nil {
+		return fmt.Errorf("failed to update YAML config: %w", err)
+	}
+	fmt.Printf("📝 Updated %s with root: %s\n", config.YamlConfigFile, path)
+
+	// Update claude_desktop/config.json
+	if err := config.UpdateClaudeDesktopEnvVar(config.JsonConfigFile, config.RootEnv, path); err != nil {
+		return fmt.Errorf("failed to update Claude Desktop config: %w", err)
+	}
+	fmt.Printf("📝 Updated %s with root: %s\n", config.JsonConfigFile, path)
 
 	return nil
 }
