@@ -23,12 +23,12 @@ This MCP server is designed to preserve your Blue Prince gameplay experience. Wh
 - **Structured Notes:** Organizes notes in predefined categories (`people`, `puzzles`, `rooms`, `items`, `lore`, `general`) with intelligent metadata extraction.
 - **Resource System:** Exposes all vault files as MCP resources for direct access by AI clients (excludes `.obsidian/` directories).
 - **Spoiler-Aware Protection System:** Smart filtering that preserves discovery while enabling helpful context:
-  - Automatic filtering of external information based on user's documented discoveries
-  - Consent-based sharing of potentially spoiling external information
-  - Built-in content validation to prevent premature investigation prompts
   - Dynamic spoiler prevention rules automatically exposed as an MCP resource
   - Client-side enforcement through tool descriptions and server metadata
   - Server-side validation of all content creation with discovery preservation
+  - Automatic filtering of external information based on user's documented discoveries
+  - Consent-based sharing of potentially spoiling external information
+  - Built-in content validation to prevent premature investigation prompts
 - **Complete CRUD Operations:** 
   - ✅ `list_notes` - Lists all notes in the vault
   - ✅ `create_note` - Creates structured notes with intelligent categorization and spoiler prevention
@@ -36,9 +36,8 @@ This MCP server is designed to preserve your Blue Prince gameplay experience. Wh
   - ✅ `update_note` - Updates existing notes with new content
   - 📋 `delete_note` - Planned for future implementation
 - **CLI Testing Tools:** Comprehensive command-line interface for manual testing and debugging.
-- **Setup Utility:** Go program to initialize vault directory structure and configuration.
+- **Setup Utility:** Go program to initialize vault directory structure and configuration, as well as OAuth with Google Drive for screenshot syncs.
 - **Flexible Configuration:** Supports both file-based config and environment variable overrides.
-- **Structured Logging:** Uses `go.uber.org/zap` for comprehensive logging and debugging.
 
 ## Usage Guide
 ```
@@ -76,13 +75,13 @@ The MCP Client will then scan all of your notes (and only your notes) to look fo
     By default, it will create the vault at `~/Documents/blueprince_mcp/`.
 
     ```bash
-    go run ./cmd/setup
+    bin/setup
     ```
 
     Alternatively, you can specify a custom path for your vault:
 
     ```bash
-    go run ./cmd/setup /path/to/your/custom/vault
+    bin/setup /path/to/your/custom/vault
     ```
 
     The setup utility will ensure the required subdirectories (`notes/people`, `notes/puzzles`, `notes/rooms`, `notes/items`, `notes/lore`, `notes/general`) exist within the vault, along with `meta/` and `screenshots/` directories.
@@ -91,7 +90,7 @@ The MCP Client will then scan all of your notes (and only your notes) to look fo
     To enable automatic screenshot syncing from Google Drive, run the drive setup command:
 
     ```bash
-    go run ./cmd/setup drive "YourFolderName"
+    bin/setup drive "YourFolderName"
     ```
 
     This will:
@@ -103,7 +102,7 @@ The MCP Client will then scan all of your notes (and only your notes) to look fo
     **Requirements:**
     - The folder name must be specified (cannot be root directory)
     - Google Drive permissions include: view, list, edit, create directories, download files
-    - All authentication data is stored locally on your machine
+    - All authentication data is stored locally on your machine. See our [Privacy Policy](privacy-policy.html) for more details on data handling
 
 4.  **Review `config.yaml`:**
     The setup utility updates `config.yaml` with the `obsidian_vault_path`. You can review this file and adjust other settings like `server.host` or `server.port` if needed.
@@ -128,6 +127,11 @@ go build -o ./bin/blueprince-mcp-server ./cmd/server/main.go
 ### Building the CLI Tools
 ```bash
 go build -o ./bin/blueprince-tools ./cmd/tools/
+```
+
+### Building the Setup Utility
+```bash
+go build -o ./bin/setup ./cmd/setup/main.go
 ```
 
 ### Running the Server
@@ -159,6 +163,7 @@ Add this to your Claude Desktop config:
     "blueprince-notes": {
       "command": "/path/to/blueprince-mcp/bin/blueprince-mcp-server",
       "env": {
+        "GOOGLE_DRIVE_SCREENSHOT_FOLDER": "Blue Prince",
         "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
       }
     }
@@ -199,60 +204,56 @@ See [`cmd/tools/README.md`](cmd/tools/README.md) for detailed CLI documentation 
 blueprince-mcp/
 ├── runtime/
 │   ├── mcp/
-│   │   ├── tools/              # MCP tool implementations
-│   │   │   ├── list.go         # ✅ List notes tool
-│   │   │   ├── create.go       # ✅ Create note tool
-│   │   │   ├── read.go         # ✅ Read note tool
-│   │   │   ├── update.go       # ✅ Update note tool
-│   │   │   ├── delete.go       # ✅ Delete note tool
-│   │   │   └── register.go     # Tool registration
-│   │   └── resources/          # MCP resource system
+│   │   ├── tools/              # MCP Tool implementations
+│   │   └── resources/          # MCP Resources
 │   ├── models/
 │   │   ├── notes/              # Note structure and schemas
-│   │   └── vault/              # Vault constants and structure
-│   └── utils/                  # Common utilities (logging, file ops)
+│   │   ├── vault/              # Obsidian Vault constants and structure
+│   │   └── storage/            # Storage interface abstractions
+│   ├── storage/                # Storage implementations
+│   │   └── drive/              # Google Drive implementation
+│   └── utils/                  # Common utilities (logging, file ops, security)
 ├── cmd/
 │   ├── server/main.go          # Main MCP server application
 │   ├── setup/                  # Setup utilities
-│   │   ├── main.go             # Vault initialization utility
-│   │   └── drive/              # Google Drive integration setup
-│   │       ├── drive.go        # Drive command implementation
-│   │       └── auth/           # OAuth authentication
-│   │           ├── auth.go     # Google Drive OAuth flow
-│   ├── tools/                  # CLI testing tools
-│   │   ├── main.go             # CLI root command
-│   │   ├── client.go           # MCP client implementation
-│   │   ├── list.go             # List command
-│   │   ├── read.go             # Read command  
-│   │   ├── create.go           # Create command
-│   │   ├── update.go           # Update command
-│   │   └── README.md           # CLI documentation
+│   ├── tools/                  # CLI for running MCP Server Tools locally
 │   └── config/                 # Configuration management
-├── docs/                       # Documentation
-│   ├── privacy-policy.md       # Privacy policy for Google Drive integration
-│   └── index.md                # Documentation homepage
+├── docs/                       # Documentation for GitHub Pages
 └── bin/                        # Built binaries
 ```
 
 ## Current Status & Roadmap
 
 ### ✅ Completed
-- MCP server framework with stdio transport
-- Resource system exposing all vault files to AI clients  
-- Structured note schema with metadata and categories
-- Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`, `delete_note`
-- Vault directory structure and setup utility
+- **Core MCP Framework:**
+  - MCP server framework with stdio transport
+  - Resource system exposing all vault files to AI clients  
+  - Structured note schema with metadata and categories
+  - Complete CRUD operations: `list_notes`, `create_note`, `read_note`, `update_note`, `delete_note`
+  - Vault directory structure and setup utility
 - **Google Drive Integration:**
   - OAuth2 authentication flow with automatic browser opening
   - Full Google Drive API permissions (view, list, edit, create, download)
   - Secure local token storage in `~/.blueprince_mcp/`
   - Automated folder creation and access verification
   - Privacy-focused design with no third-party data transmission
-- Multi-layered spoiler prevention system:
-  - Server-side content validation and spoiler detection
-  - Spoiler prevention rules exposed as MCP resource
-  - Client-side enforcement through tool descriptions
-  - Automatic rule delivery to MCP clients
+  - **Refactored Architecture:**
+    - Modular storage interface with `runtime/storage/drive` backend
+    - Centralized Google Drive utilities and path management
+    - Shared credential loading and token management
+    - Clean separation between setup and runtime operations
+- **Code Quality & Testing:**
+  - **Comprehensive unit test coverage** across all major components
+  - Storage utilities testing (path management, token handling, configs)
+  - File operations testing (security validation, directory management)
+  - Authentication flow testing (OAuth setup, error handling)
+  - Mock implementations for external dependencies
+  - Benchmark tests for performance validation
+- **Security & Reliability:**
+  - Multi-layered spoiler prevention system
+  - Path security and traversal prevention
+  - Input validation and error handling
+  - Configuration management with environment variable support
 
 ### 📋 Planned
 - **Enhanced Screenshot Integration:**

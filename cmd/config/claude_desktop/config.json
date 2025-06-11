@@ -5,8 +5,8 @@
       "args": [],
       "command": "/Users/michael.myung/dev/blueprince-mcp/bin/blueprince-mcp-server",
       "env": {
-        "OBSIDIAN_VAULT_PATH": "/Users/michael.myung/Documents/blueprince_mcp",
-        "GOOGLE_DRIVE_SCREENSHOT_FOLDER": "Blue Prince"
+        "GOOGLE_DRIVE_SCREENSHOT_FOLDER": "Blue Prince",
+        "OBSIDIAN_VAULT_PATH": "/Users/michael.myung/Documents/blueprince_mcp"
       }
     }
   }
