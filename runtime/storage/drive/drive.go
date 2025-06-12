@@ -60,7 +60,7 @@ func (g *GoogleDrive) GetFiles(filename string) ([]string, error) {
 			return nil, fmt.Errorf("failed to copy file content: %w", err)
 		}
 
-		files[i] = fullPath
+		files[i] = filename
 
 		g.MoveFile(file.Id, archive_dir)
 	}

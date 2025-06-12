@@ -26,10 +26,10 @@ func DownloadTool() mcp.Tool {
 	}
 
 	tool.Description = `
-This tool downloads screenshots from the Google Drive folder configured during setup. 
-The tool can be configured to batch download multiple files or a single file. 
-If the param "file_name" is an empty string, all files directly in the pre-configured Google Drive folder will be downloaded.
-If the param "file_name" is not an empty string, the tool will attempt to download only the specified file.
+This Tool downloads screenshots from the Google Drive folder configured during setup. 
+It can be configured to batch download multiple files or a single file. 
+- If the param "file_name" is an empty string, all files directly in the pre-configured Google Drive folder will be downloaded.
+- If the param "file_name" is not an empty string, the tool will attempt to download only the specified file.
 Under the hood, this tool moves successfully downloaded files into an archived folder in Drive.	
 
 This Tool is part of a multi-step WORKFLOW that is made up of 
@@ -37,8 +37,9 @@ This Tool is part of a multi-step WORKFLOW that is made up of
 2. analyze_screenshot
 3. create_note
 
-WORKFLOW: After getting a successful response from this tool, you should:
-1. Call the analyze_screenshot tool for each fileName in the response of this tool. fileNames are comma separated.
+WORKFLOW: After getting a successful response from this tool, you should iterate over each downloaded file. For each fileName in the response's comma separated list of fileNames:
+- Call the analyze_screenshot tool. This tool will ask the MCP Host to analyze the contents of the screenshot and format them in the appropriate format for a create_note tool call.
+- Call the create_note tool. This tool will store the outputs of analyze_screenshot into a note containing the analyzed contents of the screenshot.
 `
 	return tool
 }

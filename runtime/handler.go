@@ -33,7 +33,9 @@ func (h *Handler) RegisterTools(ctx context.Context, s *server.MCPServer) {
 	s.AddTool(notes.UpdateTool(), notes.UpdateHandler(ctx, h.cfg))
 	s.AddTool(notes.DeleteTool(), notes.DeleteHandler(ctx, h.cfg))
 	s.AddTool(screenshots.DownloadTool(), screenshots.DownloadHandler(ctx, h.store))
-	s.AddTool(screenshots.ListTool(), screenshots.ListHandler(ctx, h.store))
+	s.AddTool(screenshots.ListTool(), screenshots.ListHandler(ctx, h.cfg, h.store))
+	// TODO: need to figure out image compression s.AddTool(screenshots.ViewTool(), screenshots.ViewHandler(ctx, h.cfg))
+	s.AddTool(screenshots.AnalyzeTool(), screenshots.AnalyzeHandler(ctx, h.cfg))
 }
 
 func (h *Handler) RegisterResources(ctx context.Context, s *server.MCPServer) error {

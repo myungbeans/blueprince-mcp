@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io/fs"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -163,4 +164,28 @@ func EnsureDirExists(path string, perm os.FileMode) error {
 		return fmt.Errorf("failed to check directory '%s': %w", path, err)
 	}
 	return nil
+}
+
+func GetMimeType(path string) string {
+	// Basic MIME type detection by extension
+	mimeType := mime.TypeByExtension(filepath.Ext(path))
+	if mimeType == "" {
+		mimeType = "application/octet-stream" // Default if extension is unknown or not set
+	}
+	// For text-based files without specific extensions, text/plain is a safe bet.
+	if strings.Contains(mimeType, "text") || mimeType == "application/octet-stream" {
+		// A simple check for markdown specifically
+		if strings.ToLower(filepath.Ext(path)) == ".md" {
+			mimeType = "text/markdown; charset=utf-8"
+		} else if mimeType == "application/octet-stream" { // If still octet-stream, try defaulting to text/plain for common text files.
+			likelyTextExtensions := []string{".txt", ".log", ".conf", ".cfg", ".ini", ".yaml", ".yml", ".toml"}
+			for _, ext := range likelyTextExtensions {
+				if strings.HasSuffix(strings.ToLower(path), ext) {
+					mimeType = "text/plain; charset=utf-8"
+					break
+				}
+			}
+		}
+	}
+	return mimeType
 }
