@@ -12,3 +12,6 @@ go.work
 
 # Vendor
 vendor/
+
+#binary
+bin/
