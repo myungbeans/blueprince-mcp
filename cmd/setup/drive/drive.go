@@ -31,8 +31,7 @@ Upon successful authentication, this command will:
 You must specify a folder name to use as the root Google Drive folder for the integration.
 The folder cannot be the root of your Google Drive - it must be a specific folder.
 
-This should be run on the pre-built binary. 
-If run locally via CLI, you must download the app's .credentials.json from SecretManager first and save it locally in the root dir of this project.
+Make sure to follow the steps in the README to get .credentials.json set up.
 `,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

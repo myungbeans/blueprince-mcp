@@ -2,7 +2,7 @@
 
 ![Blue Prince MCP Architect Notes logo](static/blue_prince_mcp_logo.png)
 
-This repository contains the code for an MCP (Model Context Protocol) server designed to act as a dedicated note-taking and brainstorming assistant for playing the game [Blue Prince](https://store.steampowered.com/app/1569580/Blue_Prince/).
+This repository contains the code for an MCP (Model Context Protocol) server designed to act as a dedicated spoiler shield, note-taking tool, and brainstorming assistant for playing the game [Blue Prince](https://store.steampowered.com/app/1569580/Blue_Prince/).
 
 This MCP server exposes tools and resources for managing local notes (stored as .md files) that allow users to write notes, lookup information from their notes, and brainstorm with a companion MCP client as they play through the video game Blue Prince. This is designed to help players make connections and recall things they've seen and experienced while avoiding spoilers from online resources.
 
@@ -29,12 +29,16 @@ This MCP server is designed to preserve your Blue Prince gameplay experience. Wh
   - Automatic filtering of external information based on user's documented discoveries
   - Consent-based sharing of potentially spoiling external information
   - Built-in content validation to prevent premature investigation prompts
-- **Complete CRUD Operations:** 
+- **Intelligent Note Taking & Organization:** 
   - ✅ `list_notes` - Lists all notes in the vault
   - ✅ `create_note` - Creates structured notes with intelligent categorization and spoiler prevention
   - ✅ `read_note` - Reads complete note content including metadata
   - ✅ `update_note` - Updates existing notes with new content
   - 📋 `delete_note` - Planned for future implementation
+- **Intelligent Screenshot Management & Analysis (in progress)**
+  - 📋 `analyze_screenshot` - Leverage the MCP Host to analyze contents of an img file
+  - 📋 `view_screenshot` - Display an img
+  - 📋 `download_screenshots` - Integrate with Google Drive to download screenshot(s)
 - **CLI Testing Tools:** Comprehensive command-line interface for manual testing and debugging.
 - **Setup Utility:** Go program to initialize vault directory structure and configuration, as well as OAuth with Google Drive for screenshot syncs.
 - **Flexible Configuration:** Supports both file-based config and environment variable overrides.
@@ -87,7 +91,10 @@ The MCP Client will then scan all of your notes (and only your notes) to look fo
     The setup utility will ensure the required subdirectories (`notes/people`, `notes/puzzles`, `notes/rooms`, `notes/items`, `notes/lore`, `notes/general`) exist within the vault, along with `meta/` and `screenshots/` directories.
 
 3.  **Configure Google Drive Integration (Optional):**
-    To enable automatic screenshot syncing from Google Drive, run the drive setup command:
+    Until I get to deploying this and having it hosted, to run locally you must obtain your own API credentials from the Google Cloud Platform.
+    See the section below for more.
+
+    Once you have your credentials in ./.credentials.json, run the drive setup command:
 
     ```bash
     bin/setup drive "YourFolderName"
@@ -116,6 +123,29 @@ The MCP Client will then scan all of your notes (and only your notes) to look fo
     obsidian_vault_path: "/Users/michael.myung/Documents/blueprince_mcp" # This will be set by the setup script
     backup_dir_name: ".obsidian_backup" # Directory name for potential future backups within the vault
     ```
+### Google Cloud OAuth app Setup
+  1.  **Go to the Google Cloud Console:** [https://console.cloud.google.com/](https://console.cloud.google.com/)
+
+  2.  **Create a New Project:** If you don't have one already, create a new project.
+
+  3.  **Enable the Necessary APIs:** In the "APIs & Services" dashboard, make sure you enable the specific APIs this project requires (e.g., Google Drive API, Gmail API, etc.).
+
+  4.  **Create OAuth Credentials:**
+      * Go to "APIs & Services" > "Credentials".
+      * Click "+ CREATE CREDENTIALS" and select "OAuth client ID".
+      * Choose "Web application" as the application type.
+      * Under "Authorized redirect URIs", add `http://localhost:8080` (or whatever URI your local development server uses).
+      * Click "Create".
+
+  5.  **Download Your Credentials:**
+      * After creating the client ID, a popup will show your Client ID and Client Secret. You can also find your credentials and click the **Download JSON** icon to the right of your new client ID.
+
+  6.  **Set Up Your Local Credentials File:**
+      * The downloaded file will likely be named `client_secret_XXXXXXXX.json`.
+      * **Rename this file to `.credentials.json`**.
+      * Place this `.credentials.json` file in the root directory of this project.
+
+      *Alternatively, you can copy the `credentials.example.json` file to a new file named `.credentials.json` and paste your client ID and client secret into the appropriate fields.*
 
 ## Build & Usage
 
@@ -156,15 +186,17 @@ OBSIDIAN_VAULT_PATH=/path/to/vault go run ./cmd/server/main.go
 See the [Claude Desktop instructions for adding custom MCP servers](https://modelcontextprotocol.io/quickstart/server#testing-your-server-with-claude-for-desktop)
 
 Tl;dr 
-Add this to your Claude Desktop config:
+Edit as needed and add this to your Claude Desktop config:
 ```json
 {
   "mcpServers": {
     "blueprince-notes": {
       "command": "/path/to/blueprince-mcp/bin/blueprince-mcp-server",
       "env": {
+        "GOOGLE_DRIVE_SECRETS_DIR": "/Users/yourprofile/.blueprince_mcp",
         "GOOGLE_DRIVE_SCREENSHOT_FOLDER": "Blue Prince",
-        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
+        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault",
+        "ROOT": "/path/to/repo/blueprince-mcp"
       }
     }
   }

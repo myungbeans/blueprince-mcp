@@ -51,20 +51,22 @@ func main() {
 			logger.Fatal("Failed to load configuration", zap.Error(err))
 		}
 	}
-	logger.Info("secretsPath", zap.String("path", cfg.GoogleDriveSecrets))
-	logger.Info("root", zap.String("root", cfg.Root))
-	svc, err := drive.GetSvc(ctx, cfg.GoogleDriveSecrets, cfg.Root)
-	if err != nil {
-		logger.Fatal("Failed to get Google Drive client", zap.Error(err))
-	}
 
-	// Load Google Drive configuration - this is where the user's token lives
-	driveConfig, err := drive.LoadDriveConfig(cfg.GoogleDriveSecrets)
-	if err != nil {
-		logger.Fatal("Failed to load Google Drive config", zap.Error(err))
-	}
+	var store *drive.GoogleDrive
+	if cfg.GoogleDriveSecrets != "" {
+		svc, err := drive.GetSvc(ctx, cfg.GoogleDriveSecrets, cfg.Root)
+		if err != nil {
+			logger.Fatal("Failed to get Google Drive client", zap.Error(err))
+		}
 
-	store := drive.NewStore(ctx, svc, vaultPath, cfg.GoogleDriveSecrets, driveConfig.FolderID)
+		// Load Google Drive configuration - this is where the user's token lives
+		driveConfig, err := drive.LoadDriveConfig(cfg.GoogleDriveSecrets)
+		if err != nil {
+			logger.Fatal("Failed to load Google Drive config", zap.Error(err))
+		}
+
+		store = drive.NewStore(ctx, svc, vaultPath, cfg.GoogleDriveSecrets, driveConfig.FolderID)
+	}
 
 	// Create a new MCP server
 	s := server.NewMCPServer(
